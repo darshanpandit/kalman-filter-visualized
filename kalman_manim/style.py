@@ -33,6 +33,14 @@ COLOR_FILTER_EKF = "#e07c42"       # orange — between red and gold
 COLOR_FILTER_UKF = TEAL            # teal
 COLOR_FILTER_PF  = GOLD            # gold
 
+# ── Part 6+: ML / Transformer Colors ────────────────────────────
+COLOR_FILTER_TF        = "#9b59b6"  # violet — transformers
+COLOR_FILTER_KALMANNET = "#e74c3c"  # bright red — KalmanNet
+COLOR_SSM              = "#1abc9c"  # emerald — state-space models (S4/Mamba)
+COLOR_FILTER_IMM       = "#8e44ad"  # purple — IMM (Part 7)
+COLOR_FILTER_PHD       = "#27ae60"  # green — PHD filter (Part 7)
+COLOR_SOCIAL           = "#f39c12"  # amber — social prediction (Part 7)
+
 # ── Ellipse Defaults ───────────────────────────────────────────────────────
 ELLIPSE_FILL_OPACITY = 0.25
 ELLIPSE_STROKE_WIDTH = 2.5
