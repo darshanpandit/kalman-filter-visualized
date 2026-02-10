@@ -6,8 +6,9 @@ dist/
 build/
 .venv/
 
-# Manim output
-media/
+# Manim output (except final rendered videos)
+media/*
+!media/final/
 
 # OS
 .DS_Store

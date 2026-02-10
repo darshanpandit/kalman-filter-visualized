@@ -1,11 +1,15 @@
-"""Tests for ETH pedestrian data loader."""
+"""Tests for ETH + UCY pedestrian data loader."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from kalman_manim.data.loader import list_available_trajectories, load_eth_trajectory
+from kalman_manim.data.loader import (
+    list_available_trajectories,
+    load_eth_trajectory,
+    load_trajectory,
+)
 
 
 class TestListAvailable:
@@ -92,7 +96,7 @@ class TestLoadTrajectory:
         assert np.all(speeds < 10.0)
 
     def test_invalid_sequence(self):
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises((FileNotFoundError, ValueError)):
             load_eth_trajectory("nonexistent")
 
     def test_invalid_pedestrian(self):
@@ -122,3 +126,60 @@ class TestCuratedGenerators:
         assert "true_states" in data
         assert "measurements" in data
         assert data["true_states"].shape[1] == 4
+
+
+class TestLoadTrajectoryUnified:
+    """Tests for the unified load_trajectory() function."""
+
+    def test_eth_dataset(self):
+        data = load_trajectory(dataset="eth", max_steps=20, seed=42)
+        assert data["true_states"].shape[1] == 4
+        assert data["measurements"].shape[0] == 20
+        assert "metadata" in data
+        assert data["metadata"]["dataset"] == "eth"
+
+    def test_hotel_dataset(self):
+        data = load_trajectory(dataset="hotel", max_steps=20, seed=42)
+        assert data["true_states"].shape[1] == 4
+        assert data["metadata"]["dataset"] == "hotel"
+
+    def test_invalid_dataset(self):
+        with pytest.raises(ValueError, match="Unknown dataset"):
+            load_trajectory(dataset="nonexistent")
+
+
+class TestUCYLoader:
+    """Tests for UCY dataset loading."""
+
+    def test_univ_loads(self):
+        data = load_trajectory(dataset="univ", max_steps=20, seed=42)
+        assert data["true_states"].shape[1] == 4
+        assert data["measurements"].shape[0] == 20
+        assert data["metadata"]["dataset"] == "univ"
+
+    def test_zara1_loads(self):
+        data = load_trajectory(dataset="zara1", max_steps=20, seed=42)
+        assert data["true_states"].shape[1] == 4
+        assert data["metadata"]["dataset"] == "zara1"
+
+    def test_zara2_loads(self):
+        data = load_trajectory(dataset="zara2", max_steps=20, seed=42)
+        assert data["true_states"].shape[1] == 4
+        assert data["metadata"]["dataset"] == "zara2"
+
+    def test_ucy_source_citation(self):
+        data = load_trajectory(dataset="univ", max_steps=10, seed=42)
+        assert "UCY" in data["metadata"]["source"]
+
+    def test_list_ucy_trajectories(self):
+        result = list_available_trajectories("univ", min_steps=10)
+        assert isinstance(result, list)
+        assert len(result) > 0
+
+    def test_ucy_format_matches_eth(self):
+        """UCY output format should match ETH output format."""
+        eth = load_trajectory(dataset="eth", max_steps=15, seed=42)
+        ucy = load_trajectory(dataset="univ", max_steps=15, seed=42)
+        assert eth["true_states"].shape[1] == ucy["true_states"].shape[1]
+        assert eth["measurements"].shape[1] == ucy["measurements"].shape[1]
+        assert set(eth.keys()) == set(ucy.keys())
