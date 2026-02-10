@@ -12,6 +12,8 @@ Shows predicted ellipse (red) and measurement (blue) merging into posterior (gol
 from __future__ import annotations
 
 from manim import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 import numpy as np
 import sys, os
 
@@ -22,15 +24,15 @@ from kalman_manim.mobjects.gaussian_ellipse import GaussianEllipse
 from kalman_manim.mobjects.state_space import StateSpace
 
 
-class SceneMeasurementUpdate(Scene):
+class SceneMeasurementUpdate(VoiceoverScene, Scene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Title ───────────────────────────────────────────────────────
         title = Text("Measurement Update", color=COLOR_TEXT,
                       font_size=TITLE_FONT_SIZE)
         title.to_edge(UP, buff=0.3)
-        self.play(Write(title), run_time=NORMAL_ANIM)
 
         # ── Equations panel (right side) ────────────────────────────────
         eq_meas_model = MathTex(
@@ -60,10 +62,18 @@ class SceneMeasurementUpdate(Scene):
             font_size=SMALL_FONT_SIZE, color=COLOR_POSTERIOR,
         )
 
+        eq_joseph = MathTex(
+            r"\text{Joseph form: } \mathbf{P}_k = "
+            r"(\mathbf{I}\!-\!\mathbf{K}\mathbf{H})\,\mathbf{P}_k^{-}\,"
+            r"(\mathbf{I}\!-\!\mathbf{K}\mathbf{H})^T + "
+            r"\mathbf{K}\mathbf{R}\mathbf{K}^T",
+            font_size=SMALL_FONT_SIZE - 4, color=SLATE,
+        )
+
         eq_stack = VGroup(
             eq_meas_model, eq_innovation, eq_kalman_gain,
-            eq_state_update, eq_cov_update,
-        ).arrange(DOWN, buff=0.25, aligned_edge=LEFT)
+            eq_state_update, eq_cov_update, eq_joseph,
+        ).arrange(DOWN, buff=0.2, aligned_edge=LEFT)
         eq_stack.to_edge(RIGHT, buff=0.3).shift(DOWN * 0.5)
 
         # ── State space (left side) ─────────────────────────────────────
@@ -73,12 +83,13 @@ class SceneMeasurementUpdate(Scene):
             x_label=r"\text{pos}", y_label=r"\text{vel}",
         )
         ss.shift(DOWN * 1.0 + LEFT * 2.5)
-        self.play(Create(ss.axes), FadeIn(ss.x_label_mob), FadeIn(ss.y_label_mob),
-                  run_time=NORMAL_ANIM)
 
-        # ── Step 1: Measurement model ───────────────────────────────────
-        self.play(Write(eq_meas_model), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+        with self.voiceover(text="Now we get a measurement. The sensor observes the state through matrix H, corrupted by noise with covariance R.") as tracker:
+            self.play(Write(title), run_time=NORMAL_ANIM)
+            self.play(Create(ss.axes), FadeIn(ss.x_label_mob), FadeIn(ss.y_label_mob),
+                      run_time=NORMAL_ANIM)
+            self.play(Write(eq_meas_model), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Predicted state (red ellipse) ───────────────────────────────
         mean_pred = np.array([2.0, 1.0])
@@ -89,8 +100,10 @@ class SceneMeasurementUpdate(Scene):
             color=COLOR_PREDICTION, axes=ss.axes,
             label=r"\hat{\mathbf{x}}^-",
         )
-        self.play(FadeIn(pred_ellipse), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+
+        with self.voiceover(text="Here's our prediction from the last step — the red ellipse. This is our prior belief before the measurement arrives.") as tracker:
+            self.play(FadeIn(pred_ellipse), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Measurement arrives (blue dot + ellipse) ────────────────────
         z = np.array([2.8, 0.5])  # only observe position, but we show in 2D
@@ -105,13 +118,12 @@ class SceneMeasurementUpdate(Scene):
             label=r"\mathbf{z}",
         )
 
-        self.play(FadeIn(meas_dot, scale=1.5), run_time=FAST_ANIM)
-        self.play(FadeIn(meas_ellipse), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+        with self.voiceover(text="The measurement comes in — shown in blue. It gives us noisy information about the state.") as tracker:
+            self.play(FadeIn(meas_dot, scale=1.5), run_time=FAST_ANIM)
+            self.play(FadeIn(meas_ellipse), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Step 2: Innovation ──────────────────────────────────────────
-        self.play(Write(eq_innovation), run_time=NORMAL_ANIM)
-
         # Show innovation arrow
         innov_arrow = Arrow(
             ss.c2p(mean_pred[0], mean_pred[1]),
@@ -121,16 +133,18 @@ class SceneMeasurementUpdate(Scene):
         innov_label = MathTex(r"\tilde{\mathbf{y}}", color=COLOR_TEXT,
                                font_size=SMALL_FONT_SIZE)
         innov_label.next_to(innov_arrow, UP, buff=0.1)
-        self.play(Create(innov_arrow), FadeIn(innov_label), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_MEDIUM)
+
+        with self.voiceover(text="The innovation is the difference between what we measured and what we expected. It's the surprise — how much the measurement disagrees with our prediction.") as tracker:
+            self.play(Write(eq_innovation), run_time=NORMAL_ANIM)
+            self.play(Create(innov_arrow), FadeIn(innov_label), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Step 3: Kalman Gain ─────────────────────────────────────────
-        self.play(Write(eq_kalman_gain), run_time=SLOW_ANIM)
-        self.wait(PAUSE_MEDIUM)
+        with self.voiceover(text="The Kalman gain K balances prediction uncertainty against measurement noise. This is the optimal weighting.") as tracker:
+            self.play(Write(eq_kalman_gain), run_time=SLOW_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Step 4: State update ────────────────────────────────────────
-        self.play(Write(eq_state_update), run_time=NORMAL_ANIM)
-
         # Compute updated state
         S = H @ P_pred @ H.T + R
         K = P_pred @ H.T @ np.linalg.inv(S)
@@ -146,25 +160,29 @@ class SceneMeasurementUpdate(Scene):
             label=r"\hat{\mathbf{x}}_k",
         )
 
-        self.play(
-            FadeOut(innov_arrow), FadeOut(innov_label),
-            pred_ellipse.animate.set_opacity(0.15),
-            meas_ellipse.animate.set_opacity(0.15),
-            FadeIn(posterior_ellipse),
-            run_time=SLOW_ANIM,
-        )
-        self.wait(PAUSE_SHORT)
+        with self.voiceover(text="The update is elegant: take the prediction, add K times the innovation. The gold posterior is smaller than both inputs — information fusion reduces uncertainty.") as tracker:
+            self.play(Write(eq_state_update), run_time=NORMAL_ANIM)
+            self.play(
+                FadeOut(innov_arrow), FadeOut(innov_label),
+                pred_ellipse.animate.set_opacity(0.15),
+                meas_ellipse.animate.set_opacity(0.15),
+                FadeIn(posterior_ellipse),
+                run_time=SLOW_ANIM,
+            )
+            self.wait(PAUSE_SHORT)
 
         # ── Step 5: Covariance update ───────────────────────────────────
-        self.play(Write(eq_cov_update), run_time=NORMAL_ANIM)
-
         shrink_note = Text(
             "Posterior is smaller than both prediction and measurement!",
             color=COLOR_POSTERIOR, font_size=SMALL_FONT_SIZE,
         )
         shrink_note.to_edge(DOWN, buff=0.3)
-        self.play(FadeIn(shrink_note), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG * 2)
+
+        with self.voiceover(text="The covariance shrinks too. In practice, we use the numerically stable Joseph form. The posterior is always smaller than the prediction.") as tracker:
+            self.play(Write(eq_cov_update), run_time=NORMAL_ANIM)
+            self.play(Write(eq_joseph), run_time=NORMAL_ANIM)
+            self.play(FadeIn(shrink_note), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG * 2)
 
         # ── Fade out ───────────────────────────────────────────────────
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)

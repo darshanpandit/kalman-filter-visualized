@@ -8,6 +8,8 @@ Introduces the Kalman gain K as a blending weight.
 from __future__ import annotations
 
 from manim import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 import numpy as np
 import sys, os
 
@@ -17,8 +19,9 @@ from kalman_manim.style import *
 from kalman_manim.utils import gaussian_product_1d, gaussian_1d_pdf
 
 
-class SceneGaussian1D(Scene):
+class SceneGaussian1D(VoiceoverScene, Scene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Parameters ──────────────────────────────────────────────────
@@ -34,13 +37,11 @@ class SceneGaussian1D(Scene):
         ).shift(DOWN * 0.5)
         x_label = axes.get_x_axis_label(
             MathTex(r"x", color=COLOR_TEXT, font_size=BODY_FONT_SIZE))
-        self.play(Create(axes), FadeIn(x_label), run_time=NORMAL_ANIM)
 
         # ── Title ───────────────────────────────────────────────────────
         title = Text("Multiplying Two Gaussians", color=COLOR_TEXT,
                       font_size=TITLE_FONT_SIZE)
         title.to_edge(UP, buff=0.3)
-        self.play(Write(title), run_time=NORMAL_ANIM)
 
         # ── Prediction Gaussian (red) ──────────────────────────────────
         x_vals = np.linspace(-1, 7, 300)
@@ -59,9 +60,12 @@ class SceneGaussian1D(Scene):
                           font_size=SMALL_FONT_SIZE)
         pred_text.next_to(pred_label, UP, buff=0.15)
 
-        self.play(Create(pred_curve), FadeIn(pred_label), FadeIn(pred_text),
-                  run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+        with self.voiceover(text="Let's start simple: one dimension. This red curve is our prediction — we think the pedestrian is around position 2, with some uncertainty.") as tracker:
+            self.play(Create(axes), FadeIn(x_label), run_time=NORMAL_ANIM)
+            self.play(Write(title), run_time=NORMAL_ANIM)
+            self.play(Create(pred_curve), FadeIn(pred_label), FadeIn(pred_text),
+                      run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Measurement Gaussian (blue) ────────────────────────────────
         meas_curve = axes.plot(
@@ -79,9 +83,10 @@ class SceneGaussian1D(Scene):
                           font_size=SMALL_FONT_SIZE)
         meas_text.next_to(meas_label, UP, buff=0.15)
 
-        self.play(Create(meas_curve), FadeIn(meas_label), FadeIn(meas_text),
-                  run_time=NORMAL_ANIM)
-        self.wait(PAUSE_MEDIUM)
+        with self.voiceover(text="Now a measurement arrives in blue, saying the position is closer to 4. Two sources of information disagreeing — how do we combine them?") as tracker:
+            self.play(Create(meas_curve), FadeIn(meas_label), FadeIn(meas_text),
+                      run_time=NORMAL_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Derive product formulas ────────────────────────────────────
         formula_group = VGroup()
@@ -101,29 +106,28 @@ class SceneGaussian1D(Scene):
         formula_group = VGroup(mu_formula, var_formula).arrange(DOWN, buff=SMALL_BUFF)
         formula_group.to_edge(RIGHT, buff=0.4).shift(UP * 1.5)
 
-        # Shrink axes to make room
-        self.play(
-            axes.animate.scale(0.65).to_edge(LEFT, buff=0.3).shift(DOWN * 0.3),
-            pred_curve.animate.scale(0.65).to_edge(LEFT, buff=0.3).shift(DOWN * 0.3),
-            meas_curve.animate.scale(0.65).to_edge(LEFT, buff=0.3).shift(DOWN * 0.3),
-            FadeOut(pred_label), FadeOut(meas_label),
-            FadeOut(pred_text), FadeOut(meas_text),
-            FadeOut(x_label),
-            run_time=NORMAL_ANIM,
-        )
+        with self.voiceover(text="When you multiply two Gaussians, you get another Gaussian. The new mean is a weighted average, and the new variance comes from this elegant formula.") as tracker:
+            # Shrink axes to make room
+            self.play(
+                axes.animate.scale(0.65).to_edge(LEFT, buff=0.3).shift(DOWN * 0.3),
+                pred_curve.animate.scale(0.65).to_edge(LEFT, buff=0.3).shift(DOWN * 0.3),
+                meas_curve.animate.scale(0.65).to_edge(LEFT, buff=0.3).shift(DOWN * 0.3),
+                FadeOut(pred_label), FadeOut(meas_label),
+                FadeOut(pred_text), FadeOut(meas_text),
+                FadeOut(x_label),
+                run_time=NORMAL_ANIM,
+            )
 
-        self.play(Write(mu_formula), run_time=SLOW_ANIM)
-        self.wait(PAUSE_SHORT)
-        self.play(Write(var_formula), run_time=SLOW_ANIM)
-        self.wait(PAUSE_MEDIUM)
+            self.play(Write(mu_formula), run_time=SLOW_ANIM)
+            self.wait(PAUSE_SHORT)
+            self.play(Write(var_formula), run_time=SLOW_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Product Gaussian (gold) ────────────────────────────────────
         result_curve = axes.plot(
             lambda x: gaussian_1d_pdf(np.array([x]), mu_new, var_new)[0],
             x_range=[-1, 7], color=COLOR_POSTERIOR,
         )
-
-        self.play(Create(result_curve), run_time=NORMAL_ANIM)
 
         insight = Text(
             "The product is always narrower\n"
@@ -132,12 +136,13 @@ class SceneGaussian1D(Scene):
             line_spacing=1.2,
         )
         insight.next_to(var_formula, DOWN, buff=LARGE_BUFF)
-        self.play(FadeIn(insight, shift=UP * 0.2), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG)
+
+        with self.voiceover(text="Here's the result in gold. Notice something crucial: the product is always narrower than either input. Combining information reduces uncertainty — this is the core principle of the Kalman Filter.") as tracker:
+            self.play(Create(result_curve), run_time=NORMAL_ANIM)
+            self.play(FadeIn(insight, shift=UP * 0.2), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG)
 
         # ── Rewrite with Kalman gain K ──────────────────────────────────
-        self.play(FadeOut(insight), run_time=FAST_ANIM)
-
         kalman_gain_eq = MathTex(
             r"K = \frac{\sigma_1^2}{\sigma_1^2 + \sigma_2^2}",
             font_size=BODY_FONT_SIZE, color=COLOR_HIGHLIGHT,
@@ -154,10 +159,12 @@ class SceneGaussian1D(Scene):
                         font_size=SMALL_FONT_SIZE)
         k_label.next_to(kalman_gain_eq, UP, buff=0.15)
 
-        self.play(FadeIn(k_label), Write(kalman_gain_eq), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
-        self.play(Write(kalman_rewrite), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_MEDIUM)
+        with self.voiceover(text="We can rewrite this using the Kalman gain K. It's a blending weight: K equals zero means trust the prediction completely, K equals one means trust the measurement. The filter automatically tunes this balance.") as tracker:
+            self.play(FadeOut(insight), run_time=FAST_ANIM)
+            self.play(FadeIn(k_label), Write(kalman_gain_eq), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
+            self.play(Write(kalman_rewrite), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── K interpretation ────────────────────────────────────────────
         k_interp = VGroup(
@@ -177,8 +184,9 @@ class SceneGaussian1D(Scene):
         k_interps = VGroup(k_interp, k_interp2).arrange(DOWN, buff=0.2)
         k_interps.next_to(kg_group, DOWN, buff=STANDARD_BUFF)
 
-        self.play(FadeIn(k_interps), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG * 2)
+        with self.voiceover(text="K equals zero means we trust the prediction. K equals one means we trust the measurement. In between, K automatically balances based on the uncertainties.") as tracker:
+            self.play(FadeIn(k_interps), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG * 2)
 
         # ── Fade out ───────────────────────────────────────────────────
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)

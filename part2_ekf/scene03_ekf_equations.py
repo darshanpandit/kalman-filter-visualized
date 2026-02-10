@@ -12,17 +12,19 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from kalman_manim.style import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 
 
-class SceneEKFEquations(Scene):
+class SceneEKFEquations(VoiceoverScene, Scene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Title ───────────────────────────────────────────────────────
         title = Text("KF vs EKF Equations", color=COLOR_TEXT,
                       font_size=TITLE_FONT_SIZE)
         title.to_edge(UP, buff=0.3)
-        self.play(Write(title), run_time=NORMAL_ANIM)
 
         # ── Column headers ──────────────────────────────────────────────
         kf_header = Text("Standard KF", color=COLOR_MEASUREMENT,
@@ -31,7 +33,10 @@ class SceneEKFEquations(Scene):
                            font_size=HEADING_FONT_SIZE)
         headers = VGroup(kf_header, ekf_header).arrange(RIGHT, buff=3.0)
         headers.next_to(title, DOWN, buff=STANDARD_BUFF)
-        self.play(FadeIn(headers), run_time=FAST_ANIM)
+
+        with self.voiceover(text="Let's compare the KF and EKF equations side by side. The structure is nearly identical.") as tracker:
+            self.play(Write(title), run_time=NORMAL_ANIM)
+            self.play(FadeIn(headers), run_time=FAST_ANIM)
 
         # ── KF equations (left) ─────────────────────────────────────────
         kf_eqs = VGroup(
@@ -62,8 +67,20 @@ class SceneEKFEquations(Scene):
         ekf_eqs.align_to(ekf_header, LEFT)
 
         # Reveal both columns simultaneously
-        for kf_eq, ekf_eq in zip(kf_eqs, ekf_eqs):
-            self.play(Write(kf_eq), Write(ekf_eq), run_time=NORMAL_ANIM)
+        with self.voiceover(text="For state prediction: the KF multiplies by matrix F, while the EKF calls the nonlinear function f. Same concept, different implementation.") as tracker:
+            self.play(Write(kf_eqs[0]), Write(ekf_eqs[0]), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
+
+        with self.voiceover(text="For covariance prediction: the EKF uses F_k, the Jacobian evaluated at the current estimate. It's the local linearization of f.") as tracker:
+            self.play(Write(kf_eqs[1]), Write(ekf_eqs[1]), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
+
+        with self.voiceover(text="The Kalman gain formula looks the same, but with Jacobians F_k and H_k replacing the constant matrices.") as tracker:
+            self.play(Write(kf_eqs[2]), Write(ekf_eqs[2]), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
+
+        with self.voiceover(text="The update replaces H times x-hat with h of x-hat — the nonlinear measurement function. Everything else stays the same.") as tracker:
+            self.play(Write(kf_eqs[3]), Write(ekf_eqs[3]), run_time=NORMAL_ANIM)
             self.wait(PAUSE_SHORT)
 
         self.wait(PAUSE_MEDIUM)
@@ -83,7 +100,8 @@ class SceneEKFEquations(Scene):
                          font_size=BODY_FONT_SIZE)
         key_text.next_to(diff_notes, UP, buff=0.2)
 
-        self.play(FadeIn(key_text), FadeIn(diff_notes), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG * 2)
+        with self.voiceover(text="In summary: F·x becomes f(x), H·x becomes h(x), and constant matrices become step-varying Jacobians. The logic is identical — only the linearization changes.") as tracker:
+            self.play(FadeIn(key_text), FadeIn(diff_notes), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG * 2)
 
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)

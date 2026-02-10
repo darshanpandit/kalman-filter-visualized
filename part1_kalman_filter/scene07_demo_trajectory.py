@@ -8,6 +8,8 @@ and filtered estimate (gold) with breathing covariance ellipse.
 from __future__ import annotations
 
 from manim import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 import numpy as np
 import sys, os
 
@@ -19,8 +21,9 @@ from kalman_manim.data.generators import generate_pedestrian_trajectory
 from filters.kalman import KalmanFilter
 
 
-class SceneDemoTrajectory(MovingCameraScene):
+class SceneDemoTrajectory(VoiceoverScene, MovingCameraScene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Generate trajectory ─────────────────────────────────────────
@@ -68,7 +71,6 @@ class SceneDemoTrajectory(MovingCameraScene):
                       font_size=TITLE_FONT_SIZE)
         title.to_edge(UP, buff=0.3)
         title.set_z_index(10)
-        self.play(Write(title), run_time=NORMAL_ANIM)
 
         # ── Legend ──────────────────────────────────────────────────────
         legend_items = VGroup(
@@ -87,7 +89,10 @@ class SceneDemoTrajectory(MovingCameraScene):
         ).arrange(DOWN, buff=0.1, aligned_edge=LEFT)
         legend_items.to_corner(UL, buff=0.3)
         legend_items.set_z_index(10)
-        self.play(FadeIn(legend_items), run_time=FAST_ANIM)
+
+        with self.voiceover(text="Let's watch the Kalman Filter track a pedestrian in real time. White is the true path, blue dots are GPS measurements, and gold is the filter's estimate.") as tracker:
+            self.play(Write(title), run_time=NORMAL_ANIM)
+            self.play(FadeIn(legend_items), run_time=FAST_ANIM)
 
         # ── Animate step by step ────────────────────────────────────────
         # Start with initial position
@@ -114,6 +119,9 @@ class SceneDemoTrajectory(MovingCameraScene):
         # True path points accumulated
         true_points = [to_scene(true_states[0, :2])]
         est_points = [pos_est]
+
+        with self.voiceover(text="Each cycle, a new measurement arrives. The filter predicts, compares to the measurement, and updates. Watch the uncertainty ellipse breathe — growing during prediction, shrinking during update.") as tracker:
+            pass  # Voice plays while loop runs
 
         for k in range(len(measurements)):
             # True position at step k+1
@@ -170,11 +178,12 @@ class SceneDemoTrajectory(MovingCameraScene):
             self.play(*anims, run_time=0.25)
 
         # ── Zoom out to see full picture ────────────────────────────────
-        self.play(
-            self.camera.frame.animate.move_to(ORIGIN).set(width=14),
-            run_time=SLOW_ANIM,
-        )
-        self.wait(PAUSE_LONG)
+        with self.voiceover(text="Let's zoom out and see the full picture.") as tracker:
+            self.play(
+                self.camera.frame.animate.move_to(ORIGIN).set(width=14),
+                run_time=SLOW_ANIM,
+            )
+            self.wait(PAUSE_LONG)
 
         # ── Summary text ────────────────────────────────────────────────
         summary = Text(
@@ -185,7 +194,9 @@ class SceneDemoTrajectory(MovingCameraScene):
         )
         summary.to_edge(DOWN, buff=0.3)
         summary.set_z_index(10)
-        self.play(FadeIn(summary), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG * 2)
+
+        with self.voiceover(text="From noisy, scattered measurements, the Kalman Filter has reconstructed a smooth, accurate trajectory. This is optimal Bayesian inference in action.") as tracker:
+            self.play(FadeIn(summary), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG * 2)
 
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)

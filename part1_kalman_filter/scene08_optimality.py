@@ -7,6 +7,8 @@ Brief proof sketch, then teases the next video (EKF for nonlinear systems).
 from __future__ import annotations
 
 from manim import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 import sys, os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -14,16 +16,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from kalman_manim.style import *
 
 
-class SceneOptimality(Scene):
+class SceneOptimality(VoiceoverScene, Scene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Title ───────────────────────────────────────────────────────
         title = Text("Why the Kalman Filter is Optimal",
                       color=COLOR_TEXT, font_size=TITLE_FONT_SIZE)
         title.to_edge(UP, buff=0.3)
-        self.play(Write(title), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
 
         # ── MMSE statement ──────────────────────────────────────────────
         theorem = VGroup(
@@ -38,8 +39,12 @@ class SceneOptimality(Scene):
             ),
         ).arrange(DOWN, buff=0.2)
         theorem.next_to(title, DOWN, buff=STANDARD_BUFF)
-        self.play(FadeIn(theorem), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+
+        with self.voiceover(text="The Kalman Filter isn't just good — it's provably optimal. Among all linear estimators, it minimizes the mean squared error.") as tracker:
+            self.play(Write(title), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
+            self.play(FadeIn(theorem), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Objective function ──────────────────────────────────────────
         objective = MathTex(
@@ -51,8 +56,10 @@ class SceneOptimality(Scene):
             font_size=EQUATION_FONT_SIZE, color=COLOR_EQUATION,
         )
         objective.next_to(theorem, DOWN, buff=STANDARD_BUFF)
-        self.play(Write(objective), run_time=SLOW_ANIM)
-        self.wait(PAUSE_MEDIUM)
+
+        with self.voiceover(text="We want to minimize the expected squared difference between the true state and our estimate — the trace of the error covariance.") as tracker:
+            self.play(Write(objective), run_time=SLOW_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Proof sketch ────────────────────────────────────────────────
         proof_title = Text("Proof sketch:", color=COLOR_TEXT,
@@ -81,12 +88,12 @@ class SceneOptimality(Scene):
         proof_steps.next_to(proof_title, DOWN, buff=SMALL_BUFF)
         proof_steps.align_to(proof_title, LEFT)
 
-        self.play(FadeIn(proof_title), run_time=FAST_ANIM)
-        for step in proof_steps:
-            self.play(Write(step), run_time=NORMAL_ANIM)
-            self.wait(PAUSE_SHORT)
-
-        self.wait(PAUSE_LONG)
+        with self.voiceover(text="The proof is elegant: take the derivative of the error covariance with respect to K, set it to zero, and solve. You get exactly the Kalman gain formula.") as tracker:
+            self.play(FadeIn(proof_title), run_time=FAST_ANIM)
+            for step in proof_steps:
+                self.play(Write(step), run_time=NORMAL_ANIM)
+                self.wait(PAUSE_SHORT)
+            self.wait(PAUSE_LONG)
 
         # ── Conditions ──────────────────────────────────────────────────
         conditions = VGroup(
@@ -98,8 +105,9 @@ class SceneOptimality(Scene):
         ).arrange(DOWN, buff=0.15, aligned_edge=LEFT)
         conditions.to_edge(DOWN, buff=0.4)
 
-        self.play(FadeIn(conditions), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG)
+        with self.voiceover(text="But this optimality requires two conditions: linear dynamics and Gaussian noise. When both hold, no estimator can beat the Kalman Filter.") as tracker:
+            self.play(FadeIn(conditions), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG)
 
         # ── Teaser for next video ───────────────────────────────────────
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)
@@ -108,15 +116,16 @@ class SceneOptimality(Scene):
             "But what if the system isn't linear?",
             color=COLOR_HIGHLIGHT, font_size=TITLE_FONT_SIZE,
         )
-        self.play(FadeIn(teaser, scale=0.9), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG)
-
         next_ep = Text(
             "Next: The Extended Kalman Filter",
             color=COLOR_TEXT, font_size=HEADING_FONT_SIZE,
         )
         next_ep.next_to(teaser, DOWN, buff=LARGE_BUFF)
-        self.play(FadeIn(next_ep, shift=UP * 0.2), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG * 2)
+
+        with self.voiceover(text="But what if the system isn't linear? What if the pedestrian turns corners or the sensor model involves trigonometry? That's where the Extended Kalman Filter comes in. See you in Part 2.") as tracker:
+            self.play(FadeIn(teaser, scale=0.9), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG)
+            self.play(FadeIn(next_ep, shift=UP * 0.2), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG * 2)
 
         self.play(FadeOut(teaser), FadeOut(next_ep), run_time=NORMAL_ANIM)

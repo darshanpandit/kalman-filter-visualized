@@ -13,17 +13,19 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from kalman_manim.style import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 
 
-class SceneLinearization(Scene):
+class SceneLinearization(VoiceoverScene, Scene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Title ───────────────────────────────────────────────────────
         title = Text("Linearization: The Key Idea", color=COLOR_TEXT,
                       font_size=TITLE_FONT_SIZE)
         title.to_edge(UP, buff=0.3)
-        self.play(Write(title), run_time=NORMAL_ANIM)
 
         # ── Core insight ────────────────────────────────────────────────
         insight = Text(
@@ -31,8 +33,11 @@ class SceneLinearization(Scene):
             color=COLOR_TEXT, font_size=BODY_FONT_SIZE,
         )
         insight.next_to(title, DOWN, buff=STANDARD_BUFF)
-        self.play(FadeIn(insight), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+
+        with self.voiceover(text="Here's the key idea: zoom in on any smooth curve and it looks like a straight line. This is local linearization.") as tracker:
+            self.play(Write(title), run_time=NORMAL_ANIM)
+            self.play(FadeIn(insight), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Axes with nonlinear function ────────────────────────────────
         axes = Axes(
@@ -46,12 +51,6 @@ class SceneLinearization(Scene):
         y_label = axes.get_y_axis_label(
             MathTex(r"f(\mathbf{x}_{k-1})", color=COLOR_TEXT, font_size=SMALL_FONT_SIZE))
 
-        self.play(
-            FadeOut(insight),
-            Create(axes), FadeIn(x_label), FadeIn(y_label),
-            run_time=NORMAL_ANIM,
-        )
-
         # Nonlinear function
         func = lambda x: 0.5 * x**2 - 0.1 * x**3 + 0.5
         curve = axes.plot(func, x_range=[-2.5, 2.8], color=COLOR_PREDICTION)
@@ -59,8 +58,14 @@ class SceneLinearization(Scene):
                                font_size=SMALL_FONT_SIZE)
         curve_label.next_to(axes.c2p(2.5, func(2.5)), RIGHT, buff=0.15)
 
-        self.play(Create(curve), FadeIn(curve_label), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+        with self.voiceover(text="Consider a nonlinear function f. The standard KF can't handle this — it needs matrices, not curves.") as tracker:
+            self.play(
+                FadeOut(insight),
+                Create(axes), FadeIn(x_label), FadeIn(y_label),
+                run_time=NORMAL_ANIM,
+            )
+            self.play(Create(curve), FadeIn(curve_label), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Operating point ─────────────────────────────────────────────
         x0 = 1.5
@@ -70,8 +75,9 @@ class SceneLinearization(Scene):
                                font_size=SMALL_FONT_SIZE)
         point_label.next_to(point, UL, buff=0.15)
 
-        self.play(FadeIn(point, scale=1.5), FadeIn(point_label), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
+        with self.voiceover(text="But at our current estimate x-hat, we can draw a tangent line. This tangent is the Jacobian — the local linear approximation.") as tracker:
+            self.play(FadeIn(point, scale=1.5), FadeIn(point_label), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
 
         # ── Taylor expansion ────────────────────────────────────────────
         taylor = MathTex(
@@ -84,9 +90,6 @@ class SceneLinearization(Scene):
         taylor[1].set_color(COLOR_HIGHLIGHT)
         taylor[2].set_color(COLOR_HIGHLIGHT)
         taylor.to_edge(DOWN, buff=0.4)
-
-        self.play(Write(taylor), run_time=SLOW_ANIM)
-        self.wait(PAUSE_MEDIUM)
 
         # ── Tangent line (Jacobian) ─────────────────────────────────────
         eps = 1e-5
@@ -102,8 +105,11 @@ class SceneLinearization(Scene):
         jacobian_label.next_to(axes.c2p(x0 + 1.5, tangent_func(x0 + 1.5)),
                                 UR, buff=0.15)
 
-        self.play(Create(tangent_dashed), FadeIn(jacobian_label), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG)
+        with self.voiceover(text="Using a Taylor expansion, f of x is approximately f of x-hat plus the Jacobian times x minus x-hat. Near the operating point, this is an excellent approximation.") as tracker:
+            self.play(Write(taylor), run_time=SLOW_ANIM)
+            self.wait(PAUSE_MEDIUM)
+            self.play(Create(tangent_dashed), FadeIn(jacobian_label), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG)
 
         # ── Show error grows far from operating point ───────────────────
         far_point = 0.0
@@ -116,14 +122,15 @@ class SceneLinearization(Scene):
                                font_size=SMALL_FONT_SIZE)
         error_label.next_to(error_line, LEFT, buff=0.1)
 
-        self.play(Create(error_line), FadeIn(error_label), run_time=NORMAL_ANIM)
-
         warning = Text(
             "Far from the operating point, linearization error grows",
             color=PURE_RED, font_size=SMALL_FONT_SIZE,
         )
         warning.next_to(taylor, UP, buff=0.3)
-        self.play(FadeIn(warning), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG * 2)
+
+        with self.voiceover(text="But far from the operating point, the tangent diverges from the true curve. This linearization error is the EKF's Achilles heel — it only works when uncertainty stays small.") as tracker:
+            self.play(Create(error_line), FadeIn(error_label), run_time=NORMAL_ANIM)
+            self.play(FadeIn(warning), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG * 2)
 
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)

@@ -7,6 +7,8 @@ Prior → Likelihood → Posterior, with color-coded terms and full equations.
 from __future__ import annotations
 
 from manim import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 import sys, os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -14,16 +16,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from kalman_manim.style import *
 
 
-class SceneBayesFoundations(Scene):
+class SceneBayesFoundations(VoiceoverScene, Scene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Title ───────────────────────────────────────────────────────
         title = Text("Bayesian State Estimation", color=COLOR_TEXT,
                       font_size=TITLE_FONT_SIZE)
         title.to_edge(UP, buff=0.4)
-        self.play(Write(title), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_SHORT)
 
         # ── Bayes' Theorem ──────────────────────────────────────────────
         # P(x|z) ∝ P(z|x) · P(x)
@@ -37,8 +38,11 @@ class SceneBayesFoundations(Scene):
         )
         bayes.next_to(title, DOWN, buff=LARGE_BUFF)
 
-        self.play(Write(bayes), run_time=SLOW_ANIM)
-        self.wait(PAUSE_MEDIUM)
+        with self.voiceover(text="At its heart, the Kalman Filter is Bayesian state estimation. Here's Bayes' theorem: the posterior is proportional to the likelihood times the prior.") as tracker:
+            self.play(Write(title), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
+            self.play(Write(bayes), run_time=SLOW_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Color-code each term ────────────────────────────────────────
         # Posterior — gold
@@ -48,43 +52,45 @@ class SceneBayesFoundations(Scene):
         # Prior — red
         prior_indices = [12, 13, 14]
 
-        self.play(
-            *[bayes[i].animate.set_color(COLOR_POSTERIOR) for i in posterior_indices],
-            run_time=FAST_ANIM,
-        )
         posterior_label = Text("Posterior", color=COLOR_POSTERIOR,
                                 font_size=SMALL_FONT_SIZE)
         posterior_label.next_to(bayes[2], UP, buff=0.3)
-        self.play(FadeIn(posterior_label), run_time=FAST_ANIM)
 
-        self.play(
-            *[bayes[i].animate.set_color(COLOR_MEASUREMENT) for i in likelihood_indices],
-            run_time=FAST_ANIM,
-        )
         likelihood_label = Text("Likelihood", color=COLOR_MEASUREMENT,
                                  font_size=SMALL_FONT_SIZE)
         likelihood_label.next_to(bayes[8], UP, buff=0.3)
-        self.play(FadeIn(likelihood_label), run_time=FAST_ANIM)
 
-        self.play(
-            *[bayes[i].animate.set_color(COLOR_PREDICTION) for i in prior_indices],
-            run_time=FAST_ANIM,
-        )
         prior_label = Text("Prior", color=COLOR_PREDICTION,
                             font_size=SMALL_FONT_SIZE)
         prior_label.next_to(bayes[13], UP, buff=0.3)
-        self.play(FadeIn(prior_label), run_time=FAST_ANIM)
 
-        self.wait(PAUSE_LONG)
+        with self.voiceover(text="The posterior in gold is what we want — our updated belief. The likelihood in blue captures the sensor model. And the prior in red is everything we knew before the measurement.") as tracker:
+            self.play(
+                *[bayes[i].animate.set_color(COLOR_POSTERIOR) for i in posterior_indices],
+                run_time=FAST_ANIM,
+            )
+            self.play(FadeIn(posterior_label), run_time=FAST_ANIM)
+
+            self.play(
+                *[bayes[i].animate.set_color(COLOR_MEASUREMENT) for i in likelihood_indices],
+                run_time=FAST_ANIM,
+            )
+            self.play(FadeIn(likelihood_label), run_time=FAST_ANIM)
+
+            self.play(
+                *[bayes[i].animate.set_color(COLOR_PREDICTION) for i in prior_indices],
+                run_time=FAST_ANIM,
+            )
+            self.play(FadeIn(prior_label), run_time=FAST_ANIM)
+
+            self.wait(PAUSE_LONG)
 
         # ── Recursive form ──────────────────────────────────────────────
         labels_group = VGroup(posterior_label, likelihood_label, prior_label)
-        self.play(FadeOut(labels_group), run_time=FAST_ANIM)
 
         recursive_title = Text("Recursive Bayesian Estimation",
                                 color=COLOR_TEXT, font_size=HEADING_FONT_SIZE)
         recursive_title.next_to(bayes, DOWN, buff=LARGE_BUFF)
-        self.play(FadeIn(recursive_title, shift=UP * 0.2), run_time=NORMAL_ANIM)
 
         recursive_eq = MathTex(
             r"P(\mathbf{x}_k \mid \mathbf{z}_{1:k})",
@@ -101,8 +107,11 @@ class SceneBayesFoundations(Scene):
         recursive_eq[2].set_color(COLOR_MEASUREMENT)
         recursive_eq[4].set_color(COLOR_PREDICTION)
 
-        self.play(Write(recursive_eq), run_time=SLOW_ANIM)
-        self.wait(PAUSE_MEDIUM)
+        with self.voiceover(text="Now the beautiful part: in filtering, this becomes recursive. The posterior at time k depends on the current measurement times the prior from all previous steps.") as tracker:
+            self.play(FadeOut(labels_group), run_time=FAST_ANIM)
+            self.play(FadeIn(recursive_title, shift=UP * 0.2), run_time=NORMAL_ANIM)
+            self.play(Write(recursive_eq), run_time=SLOW_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Key insight ─────────────────────────────────────────────────
         insight_box = VGroup()
@@ -119,13 +128,6 @@ class SceneBayesFoundations(Scene):
             stroke_width=2,
         )
 
-        self.play(
-            FadeIn(insight_text, shift=UP * 0.2),
-            Create(arrow_loop),
-            run_time=NORMAL_ANIM,
-        )
-        self.wait(PAUSE_LONG)
-
         # ── Connection to KF ───────────────────────────────────────────
         kf_note = Text(
             "For linear systems with Gaussian noise,\n"
@@ -134,8 +136,16 @@ class SceneBayesFoundations(Scene):
             line_spacing=1.3,
         )
         kf_note.to_edge(DOWN, buff=0.5)
-        self.play(FadeIn(kf_note), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG * 2)
+
+        with self.voiceover(text="Today's posterior becomes tomorrow's prior — a continuous loop of prediction and correction. For linear systems with Gaussian noise, this has an exact closed-form solution: the Kalman Filter.") as tracker:
+            self.play(
+                FadeIn(insight_text, shift=UP * 0.2),
+                Create(arrow_loop),
+                run_time=NORMAL_ANIM,
+            )
+            self.wait(PAUSE_LONG)
+            self.play(FadeIn(kf_note), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG * 2)
 
         # ── Fade out ───────────────────────────────────────────────────
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)

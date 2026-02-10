@@ -15,10 +15,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from kalman_manim.style import *
 from kalman_manim.data.generators import generate_nonlinear_trajectory
 from filters.kalman import KalmanFilter
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
 
 
-class SceneEKFMotivation(MovingCameraScene):
+class SceneEKFMotivation(VoiceoverScene, MovingCameraScene):
     def construct(self):
+        self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
         # ── Title ───────────────────────────────────────────────────────
@@ -63,7 +66,6 @@ class SceneEKFMotivation(MovingCameraScene):
         true_path = DashedVMobject(
             VMobject().set_points_smoothly(true_pts), num_dashes=50)
         true_path.set_color(COLOR_TRUE_PATH).set_stroke(width=1.5, opacity=0.7)
-        self.play(Create(true_path), run_time=NORMAL_ANIM)
 
         # ── Measurements ────────────────────────────────────────────────
         meas_dots = VGroup(*[
@@ -71,7 +73,10 @@ class SceneEKFMotivation(MovingCameraScene):
                 fill_opacity=0.5)
             for m in measurements
         ])
-        self.play(FadeIn(meas_dots, lag_ratio=0.02), run_time=NORMAL_ANIM)
+
+        with self.voiceover(text="The standard Kalman Filter works beautifully for linear motion. But what happens when the pedestrian turns? Here's a curved path with noisy GPS measurements.") as tracker:
+            self.play(Create(true_path), run_time=NORMAL_ANIM)
+            self.play(FadeIn(meas_dots, lag_ratio=0.02), run_time=NORMAL_ANIM)
 
         # ── Linear KF result (it lags and cuts corners) ─────────────────
         kf_pts = [to_s(kf_estimates[i]) for i in range(len(kf_estimates))]
@@ -82,8 +87,9 @@ class SceneEKFMotivation(MovingCameraScene):
                          font_size=SMALL_FONT_SIZE)
         kf_label.next_to(kf_path.get_end(), RIGHT, buff=0.2)
 
-        self.play(Create(kf_path), FadeIn(kf_label), run_time=SLOW_ANIM)
-        self.wait(PAUSE_MEDIUM)
+        with self.voiceover(text="Let's apply the linear KF with a constant-velocity model. It lags behind on turns — the linear model simply can't track the curve.") as tracker:
+            self.play(Create(kf_path), FadeIn(kf_label), run_time=SLOW_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
         # ── Highlight the failure ───────────────────────────────────────
         fail_text = Text(
@@ -93,8 +99,10 @@ class SceneEKFMotivation(MovingCameraScene):
             line_spacing=1.2,
         )
         fail_text.to_edge(DOWN, buff=0.4).set_z_index(10)
-        self.play(FadeIn(fail_text), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG)
+
+        with self.voiceover(text="The linear Kalman Filter can't handle nonlinear dynamics. It assumes straight-line motion, so it consistently underestimates every turn.") as tracker:
+            self.play(FadeIn(fail_text), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG)
 
         # ── Solution teaser ─────────────────────────────────────────────
         solution = Text(
@@ -102,7 +110,9 @@ class SceneEKFMotivation(MovingCameraScene):
             color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE,
         )
         solution.to_edge(DOWN, buff=0.4).set_z_index(10)
-        self.play(FadeOut(fail_text), FadeIn(solution), run_time=NORMAL_ANIM)
-        self.wait(PAUSE_LONG)
+
+        with self.voiceover(text="The solution: linearize around the current estimate. This is the Extended Kalman Filter — adapting the linear approximation at every step.") as tracker:
+            self.play(FadeOut(fail_text), FadeIn(solution), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_LONG)
 
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)
