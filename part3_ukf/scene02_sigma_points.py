@@ -93,7 +93,7 @@ class SceneSigmaPoints(VoiceoverScene, Scene):
                 mean=mean, cov=cov,
                 alpha=0.5, kappa=0.0,
                 color=COLOR_HIGHLIGHT,
-                center_color=COLOR_POSTERIOR,
+                center_color=COLOR_TRUE_PATH,
                 axes=in_axes,
             )
             self.play(FadeIn(sigma_cloud, lag_ratio=0.1), run_time=NORMAL_ANIM)

@@ -1,6 +1,8 @@
 """Part 2, Scene 1: Why the Linear KF Fails
 
-Shows a pedestrian taking curved turns. Applies linear KF → it diverges.
+Data: curated synthetic (coordinated turn, turn_rate=0.2, seed=10)
+
+Shows a pedestrian taking curved turns. Applies linear KF - it diverges.
 Motivates the need for handling nonlinearity.
 """
 

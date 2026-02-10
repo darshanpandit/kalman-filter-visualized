@@ -1,5 +1,7 @@
 """Part 2, Scene 4: EKF Demo on Curved Trajectory
 
+Data: curated synthetic (coordinated turn, turn_rate=0.2, seed=10)
+
 Applies EKF to the nonlinear pedestrian trajectory and shows it
 successfully tracking the curved path (unlike the linear KF).
 """

@@ -1,6 +1,8 @@
 """Scene 7: Demo — Pedestrian Trajectory Filtering
 
-Applies the Kalman Filter to a simulated pedestrian trajectory.
+Data: real-world (ETH hotel, pedestrian #236)
+
+Applies the Kalman Filter to a real pedestrian trajectory.
 Shows true path (white dashed), noisy measurements (blue dots),
 and filtered estimate (gold) with breathing covariance ellipse.
 """
@@ -17,7 +19,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from kalman_manim.style import *
 from kalman_manim.mobjects.gaussian_ellipse import GaussianEllipse
-from kalman_manim.data.generators import generate_pedestrian_trajectory
+from kalman_manim.mobjects.observation_note import make_observation_note
+from kalman_manim.data.loader import load_eth_trajectory
 from filters.kalman import KalmanFilter
 
 
@@ -27,10 +30,9 @@ class SceneDemoTrajectory(VoiceoverScene, MovingCameraScene):
         self.camera.background_color = BG_COLOR
 
         # ── Generate trajectory ─────────────────────────────────────────
-        data = generate_pedestrian_trajectory(
-            n_steps=40, dt=0.5, speed=0.6,
-            process_noise_std=0.1, measurement_noise_std=0.5,
-            turn_probability=0.1, seed=7,
+        data = load_eth_trajectory(
+            sequence="hotel", pedestrian_id=236,
+            measurement_noise_std=0.5, max_steps=36, seed=7,
         )
         true_states = data["true_states"]
         measurements = data["measurements"]
@@ -52,7 +54,7 @@ class SceneDemoTrajectory(VoiceoverScene, MovingCameraScene):
 
         kf = KalmanFilter(
             F=F, H=H, Q=Q, R=R,
-            x0=np.array([0, 0, 0.6, 0]),
+            x0=data["true_states"][0],
             P0=np.diag([1, 1, 0.5, 0.5]),
         )
         results = kf.run(measurements)
@@ -90,7 +92,7 @@ class SceneDemoTrajectory(VoiceoverScene, MovingCameraScene):
         legend_items.to_corner(UL, buff=0.3)
         legend_items.set_z_index(10)
 
-        with self.voiceover(text="Let's watch the Kalman Filter track a pedestrian in real time. White is the true path, blue dots are GPS measurements, and gold is the filter's estimate.") as tracker:
+        with self.voiceover(text="Let's watch the Kalman Filter track a real pedestrian from the ETH dataset. White is the true path, blue dots are GPS measurements, and gold is the filter's estimate.") as tracker:
             self.play(Write(title), run_time=NORMAL_ANIM)
             self.play(FadeIn(legend_items), run_time=FAST_ANIM)
 
@@ -104,7 +106,7 @@ class SceneDemoTrajectory(VoiceoverScene, MovingCameraScene):
         est_ellipse = GaussianEllipse(
             mean=results["x_estimates"][0][:2],
             cov=P_2d * scale**2,  # scale covariance to scene units
-            color=COLOR_PREDICTION,
+            color=COLOR_POSTERIOR,
             n_sigma=2,
             fill_opacity=0.15,
         )
@@ -141,7 +143,7 @@ class SceneDemoTrajectory(VoiceoverScene, MovingCameraScene):
             new_ellipse = GaussianEllipse(
                 mean=results["x_estimates"][k][:2],
                 cov=P_2d_k * scale**2,
-                color=COLOR_PREDICTION,
+                color=COLOR_POSTERIOR,
                 n_sigma=2,
                 fill_opacity=0.15,
             )
@@ -195,8 +197,15 @@ class SceneDemoTrajectory(VoiceoverScene, MovingCameraScene):
         summary.to_edge(DOWN, buff=0.3)
         summary.set_z_index(10)
 
-        with self.voiceover(text="From noisy, scattered measurements, the Kalman Filter has reconstructed a smooth, accurate trajectory. This is optimal Bayesian inference in action.") as tracker:
+        with self.voiceover(text="From noisy, scattered measurements, the Kalman Filter has reconstructed a smooth, accurate trajectory. If the filter struggles on any sharp segments, that's a limitation of the linear model. Part 2 addresses this.") as tracker:
             self.play(FadeIn(summary), run_time=NORMAL_ANIM)
+
+            # Theory-observation note for real data
+            note = make_observation_note(
+                "Linear KF assumes straight-line motion.\n"
+                "Part 2 addresses nonlinear paths.",
+            )
+            self.play(FadeIn(note), run_time=FAST_ANIM)
             self.wait(PAUSE_LONG * 2)
 
         self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=NORMAL_ANIM)

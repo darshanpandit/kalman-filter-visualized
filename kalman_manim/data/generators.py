@@ -218,3 +218,120 @@ def generate_nonlinear_trajectory(
         "measurements": measurements,
         "dt": dt,
     }
+
+
+def generate_sharp_turn_trajectory(
+    n_steps: int = 60,
+    dt: float = 0.5,
+    speed: float = 0.8,
+    process_noise_std: float = 0.05,
+    measurement_noise_std: float = 0.5,
+    seed: int | None = None,
+):
+    """Generate a trajectory with abrupt 90-degree turns.
+
+    Curated for EKF failure demos: the linear KF will visibly fail
+    at each sharp turn, while the EKF (with proper nonlinear model)
+    can adapt.
+
+    State: [x, y, vx, vy]. Turns happen at fixed intervals with
+    exactly 90-degree heading changes.
+
+    Returns same dict format as other generators.
+    """
+    rng = np.random.default_rng(seed)
+
+    true_states = np.zeros((n_steps + 1, 4))
+    true_states[0] = [0.0, 0.0, speed, 0.0]
+
+    measurements = np.zeros((n_steps, 2))
+
+    # Turn every ~15 steps, alternating left/right
+    turn_interval = 15
+    turn_direction = 1  # +1 = left (CCW), -1 = right (CW)
+
+    for k in range(n_steps):
+        pos = true_states[k, :2]
+        vel = true_states[k, 2:]
+
+        # Sharp 90-degree turn at intervals
+        if k > 0 and k % turn_interval == 0:
+            angle = turn_direction * np.pi / 2
+            cos_a, sin_a = np.cos(angle), np.sin(angle)
+            rot = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
+            vel = rot @ vel
+            turn_direction *= -1  # alternate direction
+
+        # Process noise
+        accel_noise = rng.normal(0, process_noise_std, size=2)
+        new_vel = vel + accel_noise * dt
+        new_pos = pos + vel * dt
+
+        true_states[k + 1, :2] = new_pos
+        true_states[k + 1, 2:] = new_vel
+
+        # Noisy measurement
+        measurements[k] = new_pos + rng.normal(0, measurement_noise_std, size=2)
+
+    return {
+        "true_states": true_states,
+        "measurements": measurements,
+        "dt": dt,
+    }
+
+
+def generate_multimodal_scenario(
+    n_steps: int = 50,
+    dt: float = 0.5,
+    speed: float = 0.6,
+    process_noise_std: float = 0.05,
+    measurement_noise_std: float = 0.5,
+    fork_step: int = 25,
+    seed: int | None = None,
+):
+    """Generate a corridor-fork scenario for particle filter demos.
+
+    The pedestrian walks straight, then at fork_step takes a sharp turn
+    into one of two corridors. This creates a scenario where a Gaussian
+    filter would place its estimate between the two corridors (wrong),
+    while particles can split and follow the correct branch.
+
+    State: [x, y, vx, vy].
+
+    Returns same dict format as other generators.
+    """
+    rng = np.random.default_rng(seed)
+
+    true_states = np.zeros((n_steps + 1, 4))
+    true_states[0] = [0.0, 0.0, speed, 0.0]
+
+    measurements = np.zeros((n_steps, 2))
+
+    for k in range(n_steps):
+        pos = true_states[k, :2]
+        vel = true_states[k, 2:]
+
+        # At fork point, turn sharply
+        if k == fork_step:
+            # Turn 60 degrees (choose direction based on seed parity)
+            angle = np.pi / 3 if rng.random() > 0.5 else -np.pi / 3
+            cos_a, sin_a = np.cos(angle), np.sin(angle)
+            rot = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
+            vel = rot @ vel
+
+        # Gentle process noise
+        accel_noise = rng.normal(0, process_noise_std, size=2)
+        new_vel = vel + accel_noise * dt
+        new_pos = pos + vel * dt
+
+        true_states[k + 1, :2] = new_pos
+        true_states[k + 1, 2:] = new_vel
+
+        # Noisy measurement
+        measurements[k] = new_pos + rng.normal(0, measurement_noise_std, size=2)
+
+    return {
+        "true_states": true_states,
+        "measurements": measurements,
+        "dt": dt,
+    }

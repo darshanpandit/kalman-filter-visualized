@@ -1,6 +1,8 @@
 """Part 4, Scene 4: Grand Comparison — KF vs EKF vs UKF vs PF
 
-All four filters applied to the same nonlinear trajectory.
+Data: real-world (ETH eth, pedestrian #171, first 50 steps)
+
+All four filters applied to the same real-world trajectory.
 Side-by-side paths with error metrics. Decision flowchart.
 """
 
@@ -13,7 +15,8 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from kalman_manim.style import *
-from kalman_manim.data.generators import generate_nonlinear_trajectory
+from kalman_manim.mobjects.observation_note import make_observation_note
+from kalman_manim.data.loader import load_eth_trajectory
 from filters.kalman import KalmanFilter
 from filters.ekf import ExtendedKalmanFilter
 from filters.ukf import UnscentedKalmanFilter
@@ -47,16 +50,16 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
         self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
-        with self.voiceover(text="The grand finale: all four filters on the same nonlinear trajectory. Let's see how they compare.") as tracker:
+        with self.voiceover(text="The grand finale: all four filters on a real pedestrian trajectory from ETH Zurich. Let's see how they compare.") as tracker:
             title = Text("Grand Comparison", color=COLOR_TEXT,
                           font_size=TITLE_FONT_SIZE)
             title.to_edge(UP, buff=0.3).set_z_index(10)
             self.play(Write(title), run_time=NORMAL_ANIM)
 
             # ── Generate data ───────────────────────────────────────────────
-            data = generate_nonlinear_trajectory(
-                n_steps=50, dt=0.5, turn_rate=0.2, speed=0.8,
-                process_noise_std=0.06, measurement_noise_std=0.45, seed=20,
+            data = load_eth_trajectory(
+                sequence="eth", pedestrian_id=171,
+                measurement_noise_std=0.45, max_steps=50, seed=20,
             )
             true_states = data["true_states"]
             meas = data["measurements"]
@@ -64,7 +67,7 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
 
             Q4 = 0.08 * np.eye(4)
             R2 = 0.2 * np.eye(2)
-            x0 = np.array([0, 0, 0.8, 0])
+            x0 = data["true_states"][0]
             P0 = np.eye(4)
 
             # ── Run all four filters ────────────────────────────────────────
@@ -111,12 +114,12 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
             true_path.set_color(COLOR_TRUE_PATH).set_stroke(width=1.5, opacity=0.7)
             self.play(Create(true_path), run_time=NORMAL_ANIM)
 
-        # Filter paths — distinct colors
+        # Filter paths — distinct comparison colors
         colors = {
-            "KF": COLOR_PREDICTION,
-            "EKF": TEAL,
-            "UKF": COLOR_MEASUREMENT,
-            "PF": COLOR_POSTERIOR,
+            "KF": COLOR_FILTER_KF,
+            "EKF": COLOR_FILTER_EKF,
+            "UKF": COLOR_FILTER_UKF,
+            "PF": COLOR_FILTER_PF,
         }
         estimates = {"KF": kf_est, "EKF": ekf_est, "UKF": ukf_est, "PF": pf_est}
 
@@ -133,7 +136,7 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
             label.next_to(path.get_end(), RIGHT, buff=0.1).set_z_index(10)
             self.play(Create(path), FadeIn(label), run_time=NORMAL_ANIM)
 
-        with self.voiceover(text="The EKF in teal improves significantly with its Jacobian-based linearization.") as tracker:
+        with self.voiceover(text="The EKF in orange improves significantly with its Jacobian-based linearization.") as tracker:
             name = "EKF"
             est = estimates[name]
             pts = [to_s(est[i]) for i in range(len(est))]
@@ -144,7 +147,7 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
             label.next_to(path.get_end(), RIGHT, buff=0.1).set_z_index(10)
             self.play(Create(path), FadeIn(label), run_time=NORMAL_ANIM)
 
-        with self.voiceover(text="The UKF in blue tracks even more accurately using sigma points.") as tracker:
+        with self.voiceover(text="The UKF in teal tracks even more accurately using sigma points.") as tracker:
             name = "UKF"
             est = estimates[name]
             pts = [to_s(est[i]) for i in range(len(est))]
@@ -169,7 +172,7 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
         self.wait(PAUSE_MEDIUM)
 
         # ── Error table ─────────────────────────────────────────────────
-        with self.voiceover(text="Here are the average errors. The linear KF is worst, then EKF, then UKF and PF neck and neck.") as tracker:
+        with self.voiceover(text="Here are the average errors on this real trajectory. The linear KF is worst, then EKF, then UKF and PF neck and neck. Differences depend on trajectory characteristics.") as tracker:
             true_pos = true_states[1:, :2]
             errors = {}
             for name, est in estimates.items():
@@ -192,6 +195,13 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
             bg = SurroundingRectangle(table, color=SLATE, fill_color=BG_COLOR,
                                        fill_opacity=0.9, buff=0.15)
             self.play(FadeIn(bg), FadeIn(table), run_time=NORMAL_ANIM)
+
+            # Theory-observation honesty note
+            note = make_observation_note(
+                "Differences depend on trajectory characteristics.\n"
+                "Sharper turns amplify filter differences.",
+            )
+            self.play(FadeIn(note), run_time=FAST_ANIM)
             self.wait(PAUSE_LONG)
 
         # ── Fade to decision guide ──────────────────────────────────────
@@ -205,28 +215,29 @@ class SceneGrandComparison(VoiceoverScene, MovingCameraScene):
 
             rules = VGroup(
                 VGroup(
-                    Text("Linear + Gaussian", color=COLOR_PREDICTION,
+                    Text("Linear + Gaussian", color=COLOR_FILTER_KF,
                           font_size=BODY_FONT_SIZE),
                     MathTex(r"\rightarrow", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
-                    Text("Standard KF", color=COLOR_PREDICTION,
+                    Text("Standard KF", color=COLOR_FILTER_KF,
                           font_size=BODY_FONT_SIZE),
                 ).arrange(RIGHT, buff=0.3),
                 VGroup(
-                    Text("Mildly nonlinear", color=TEAL, font_size=BODY_FONT_SIZE),
-                    MathTex(r"\rightarrow", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
-                    Text("EKF", color=TEAL, font_size=BODY_FONT_SIZE),
-                ).arrange(RIGHT, buff=0.3),
-                VGroup(
-                    Text("Strongly nonlinear", color=COLOR_MEASUREMENT,
+                    Text("Mildly nonlinear", color=COLOR_FILTER_EKF,
                           font_size=BODY_FONT_SIZE),
                     MathTex(r"\rightarrow", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
-                    Text("UKF", color=COLOR_MEASUREMENT, font_size=BODY_FONT_SIZE),
+                    Text("EKF", color=COLOR_FILTER_EKF, font_size=BODY_FONT_SIZE),
                 ).arrange(RIGHT, buff=0.3),
                 VGroup(
-                    Text("Non-Gaussian / multimodal", color=COLOR_POSTERIOR,
+                    Text("Strongly nonlinear", color=COLOR_FILTER_UKF,
                           font_size=BODY_FONT_SIZE),
                     MathTex(r"\rightarrow", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
-                    Text("Particle Filter", color=COLOR_POSTERIOR,
+                    Text("UKF", color=COLOR_FILTER_UKF, font_size=BODY_FONT_SIZE),
+                ).arrange(RIGHT, buff=0.3),
+                VGroup(
+                    Text("Non-Gaussian / multimodal", color=COLOR_FILTER_PF,
+                          font_size=BODY_FONT_SIZE),
+                    MathTex(r"\rightarrow", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
+                    Text("Particle Filter", color=COLOR_FILTER_PF,
                           font_size=BODY_FONT_SIZE),
                 ).arrange(RIGHT, buff=0.3),
             ).arrange(DOWN, buff=0.4, aligned_edge=LEFT)

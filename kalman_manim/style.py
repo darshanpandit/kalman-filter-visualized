@@ -27,6 +27,12 @@ COLOR_TEXT = CREAM
 COLOR_EQUATION = CREAM
 COLOR_HIGHLIGHT = GOLD
 
+# ── Comparison Colors (multi-filter scenes) ──────────────────────────
+COLOR_FILTER_KF  = SWISS_RED       # red — consistent with prediction color
+COLOR_FILTER_EKF = "#e07c42"       # orange — between red and gold
+COLOR_FILTER_UKF = TEAL            # teal
+COLOR_FILTER_PF  = GOLD            # gold
+
 # ── Ellipse Defaults ───────────────────────────────────────────────────────
 ELLIPSE_FILL_OPACITY = 0.25
 ELLIPSE_STROKE_WIDTH = 2.5

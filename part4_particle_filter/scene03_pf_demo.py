@@ -1,6 +1,8 @@
 """Part 4, Scene 3: Particle Filter Demo
 
-Applies PF to a pedestrian trajectory. Shows the particle cloud
+Data: real-world (ETH eth, pedestrian #216)
+
+Applies PF to a real pedestrian trajectory. Shows the particle cloud
 converging around the true path.
 """
 
@@ -14,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from kalman_manim.style import *
 from kalman_manim.mobjects.particle_cloud import ParticleCloud
-from kalman_manim.data.generators import generate_pedestrian_trajectory
+from kalman_manim.data.loader import load_eth_trajectory
 from filters.particle import ParticleFilter
 from manim_voiceover import VoiceoverScene
 from manim_voiceover.services.gtts import GTTSService
@@ -39,17 +41,16 @@ class ScenePFDemo(VoiceoverScene, MovingCameraScene):
         self.set_speech_service(GTTSService())
         self.camera.background_color = BG_COLOR
 
-        with self.voiceover(text="Here's the particle filter tracking a pedestrian with 200 particles. The teal cloud represents the state distribution.") as tracker:
+        with self.voiceover(text="Here's the particle filter tracking a real pedestrian from the ETH Zurich dataset, with 200 particles. The teal cloud represents the state distribution.") as tracker:
             title = Text("Particle Filter in Action", color=COLOR_TEXT,
                           font_size=TITLE_FONT_SIZE)
             title.to_edge(UP, buff=0.3).set_z_index(10)
             self.play(Write(title), run_time=NORMAL_ANIM)
 
             # ── Generate data ───────────────────────────────────────────────
-            data = generate_pedestrian_trajectory(
-                n_steps=30, dt=0.5, speed=0.6,
-                process_noise_std=0.1, measurement_noise_std=0.5,
-                turn_probability=0.1, seed=7,
+            data = load_eth_trajectory(
+                sequence="eth", pedestrian_id=216,
+                measurement_noise_std=0.5, max_steps=30, seed=7,
             )
             true_states = data["true_states"]
             measurements = data["measurements"]
@@ -60,7 +61,7 @@ class ScenePFDemo(VoiceoverScene, MovingCameraScene):
             pf = ParticleFilter(
                 f=_pf_transition, h=_pf_measurement,
                 Q=Q, R=R, n_particles=200,
-                x0=np.array([0, 0, 0.6, 0]),
+                x0=data["true_states"][0],
                 P0=np.diag([0.5, 0.5, 0.3, 0.3]),
                 seed=42,
             )

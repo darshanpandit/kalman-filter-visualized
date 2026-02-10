@@ -1,5 +1,7 @@
 """Part 3, Scene 4: UKF vs EKF Demo
 
+Data: curated synthetic (coordinated turn, turn_rate=0.25, seed=15)
+
 Side-by-side comparison on the nonlinear pedestrian trajectory.
 Shows UKF tracking more accurately on sharp turns.
 """
@@ -13,6 +15,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from kalman_manim.style import *
+from kalman_manim.mobjects.observation_note import make_observation_note
 from kalman_manim.data.generators import generate_nonlinear_trajectory
 from filters.ekf import ExtendedKalmanFilter
 from filters.ukf import UnscentedKalmanFilter
@@ -120,7 +123,7 @@ class SceneUKFDemo(VoiceoverScene, MovingCameraScene):
             self.wait(PAUSE_MEDIUM)
 
         # ── Error comparison ────────────────────────────────────────────
-        with self.voiceover(text="Quantitatively, the UKF has lower average error. Not always a huge gap, but it's consistently better on nonlinear problems, and no Jacobians to derive.") as tracker:
+        with self.voiceover(text="Quantitatively, the UKF has lower average error. In this particular trajectory the difference may be subtle. On sharper turns, the gap widens, and the UKF needs no Jacobians to derive.") as tracker:
             ekf_err = np.mean(np.linalg.norm(ekf_est - true_states[1:, :2], axis=1))
             ukf_err = np.mean(np.linalg.norm(ukf_est - true_states[1:, :2], axis=1))
 
@@ -132,6 +135,13 @@ class SceneUKFDemo(VoiceoverScene, MovingCameraScene):
             ).arrange(DOWN, buff=0.1)
             err_text.to_corner(DL, buff=0.3).set_z_index(10)
             self.play(FadeIn(err_text), run_time=NORMAL_ANIM)
+
+            # Theory-observation honesty note
+            note = make_observation_note(
+                "The advantage grows on sharper turns.\n"
+                "Here both use a linear transition model.",
+            )
+            self.play(FadeIn(note), run_time=FAST_ANIM)
 
             result = Text(
                 "UKF handles sharp turns better — no Jacobians needed!",

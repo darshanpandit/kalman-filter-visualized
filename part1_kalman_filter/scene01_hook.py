@@ -1,5 +1,7 @@
 """Scene 1: Hook — 'Where is the pedestrian?'
 
+Data: real-world (ETH eth, pedestrian #171)
+
 Shows noisy LBS/GPS pings of a pedestrian walking, then reveals the true path
 and teases the Kalman-filtered result.
 """
@@ -15,7 +17,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from kalman_manim.style import *
-from kalman_manim.data.generators import generate_pedestrian_trajectory
+from kalman_manim.data.loader import load_eth_trajectory
 from kalman_manim.mobjects.trajectory import PedestrianPath
 from filters.kalman import KalmanFilter
 
@@ -26,10 +28,9 @@ class SceneHook(VoiceoverScene, MovingCameraScene):
         self.camera.background_color = BG_COLOR
 
         # ── Generate data ───────────────────────────────────────────────
-        data = generate_pedestrian_trajectory(
-            n_steps=60, dt=0.5, speed=0.8,
-            process_noise_std=0.15, measurement_noise_std=0.6,
-            turn_probability=0.08, seed=42,
+        data = load_eth_trajectory(
+            sequence="eth", pedestrian_id=171,
+            measurement_noise_std=0.6, max_steps=60, seed=42,
         )
         true_states = data["true_states"]
         measurements = data["measurements"]
@@ -45,7 +46,7 @@ class SceneHook(VoiceoverScene, MovingCameraScene):
         Q = 0.1 * np.eye(4)
         R = 0.36 * np.eye(2)
         kf = KalmanFilter(F=F, H=H, Q=Q, R=R,
-                          x0=np.array([0, 0, 0.8, 0]),
+                          x0=data["true_states"][0],
                           P0=np.eye(4))
         results = kf.run(measurements)
         estimates = np.array([x[:2] for x in results["x_estimates"]])
@@ -82,7 +83,7 @@ class SceneHook(VoiceoverScene, MovingCameraScene):
             )
             meas_dots.add(dot)
 
-        with self.voiceover(text="Where is the pedestrian? Imagine tracking someone through a city using GPS. Each ping gives a position estimate, but look at how noisy these measurements are.") as tracker:
+        with self.voiceover(text="Where is the pedestrian? These are real coordinates from the ETH Zurich pedestrian dataset. Each ping gives a position estimate, but look at how noisy these measurements are.") as tracker:
             self.play(FadeIn(title, shift=DOWN * 0.3), run_time=NORMAL_ANIM)
             self.wait(PAUSE_SHORT)
 
