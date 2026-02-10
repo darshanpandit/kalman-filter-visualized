@@ -38,7 +38,7 @@ class SceneSweepRMSE(VoiceoverScene, MovingCameraScene):
         # Load precomputed data
         results = np.load(_RESULTS_PATH, allow_pickle=True)
         turn_rates = results["turn_rates"]
-        filter_names = list(results["filter_names"])
+        filter_names = [str(n) for n in results["filter_names"]]
         mean_rmse = results["mean_rmse"]  # (R, F)
         std_rmse = results["std_rmse"]    # (R, F)
 

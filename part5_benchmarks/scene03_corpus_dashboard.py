@@ -42,11 +42,11 @@ class SceneCorpusDashboard(VoiceoverScene, MovingCameraScene):
         corpus = np.load(_CORPUS_PATH, allow_pickle=True)
         timing = np.load(_TIMING_PATH, allow_pickle=True)
 
-        filter_names = list(corpus["filter_names"])
+        filter_names = [str(n) for n in corpus["filter_names"]]
         rmse_all = corpus["rmse"]     # (N_traj, N_filters)
         regimes = corpus["regimes"]
 
-        timing_names = list(timing["filter_names"])
+        timing_names = [str(n) for n in timing["filter_names"]]
         timing_mean = timing["mean_s"]
         timing_std = timing["std_s"]
 

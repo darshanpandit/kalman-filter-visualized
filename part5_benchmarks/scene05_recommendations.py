@@ -44,7 +44,7 @@ class SceneRecommendations(VoiceoverScene, MovingCameraScene):
         timing = np.load(_TIMING_PATH, allow_pickle=True)
 
         turn_rates = sweep["turn_rates"]
-        filter_names = list(sweep["filter_names"])
+        filter_names = [str(n) for n in sweep["filter_names"]]
         mean_rmse = sweep["mean_rmse"]  # (R, F)
         timing_mean = timing["mean_s"]
 
@@ -70,8 +70,8 @@ class SceneRecommendations(VoiceoverScene, MovingCameraScene):
             threshold_text = VGroup(
                 Text("KF is fine when:", color=COLOR_TEXT,
                      font_size=BODY_FONT_SIZE),
-                MathTex(
-                    rf"\omega < {crossover_rate:.2f} \text{{ rad/s}}",
+                Text(
+                    f"\u03c9 < {crossover_rate:.2f} rad/s",
                     color=COLOR_FILTER_KF, font_size=EQUATION_FONT_SIZE,
                 ),
                 Text(f"(within 20% of UKF)", color=SLATE,
@@ -89,7 +89,7 @@ class SceneRecommendations(VoiceoverScene, MovingCameraScene):
                 VGroup(
                     Text("Linear + Gaussian", color=COLOR_FILTER_KF,
                           font_size=BODY_FONT_SIZE),
-                    MathTex(r"\rightarrow", color=COLOR_TEXT),
+                    Text("\u2192", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
                     Text("KF", color=COLOR_FILTER_KF, font_size=BODY_FONT_SIZE),
                     Text(f"({timing_mean[kf_idx]*1000:.1f}ms)", color=SLATE,
                          font_size=SMALL_FONT_SIZE),
@@ -97,7 +97,7 @@ class SceneRecommendations(VoiceoverScene, MovingCameraScene):
                 VGroup(
                     Text("Mildly nonlinear", color=COLOR_FILTER_EKF,
                           font_size=BODY_FONT_SIZE),
-                    MathTex(r"\rightarrow", color=COLOR_TEXT),
+                    Text("\u2192", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
                     Text("EKF", color=COLOR_FILTER_EKF, font_size=BODY_FONT_SIZE),
                     Text(f"({timing_mean[filter_names.index('EKF')]*1000:.1f}ms)",
                          color=SLATE, font_size=SMALL_FONT_SIZE),
@@ -105,7 +105,7 @@ class SceneRecommendations(VoiceoverScene, MovingCameraScene):
                 VGroup(
                     Text("Strongly nonlinear", color=COLOR_FILTER_UKF,
                           font_size=BODY_FONT_SIZE),
-                    MathTex(r"\rightarrow", color=COLOR_TEXT),
+                    Text("\u2192", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
                     Text("UKF", color=COLOR_FILTER_UKF, font_size=BODY_FONT_SIZE),
                     Text(f"({timing_mean[ukf_idx]*1000:.1f}ms)", color=SLATE,
                          font_size=SMALL_FONT_SIZE),
@@ -113,7 +113,7 @@ class SceneRecommendations(VoiceoverScene, MovingCameraScene):
                 VGroup(
                     Text("Non-Gaussian / multimodal", color=COLOR_FILTER_PF,
                           font_size=BODY_FONT_SIZE),
-                    MathTex(r"\rightarrow", color=COLOR_TEXT),
+                    Text("\u2192", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
                     Text("PF", color=COLOR_FILTER_PF, font_size=BODY_FONT_SIZE),
                     Text(f"({timing_mean[filter_names.index('PF')]*1000:.1f}ms)",
                          color=SLATE, font_size=SMALL_FONT_SIZE),

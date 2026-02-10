@@ -196,12 +196,12 @@ class FilterBarChart(VGroup):
             bar.move_to(self.axes.c2p(x_pos, bar_height / 2))
             self.bars.add(bar)
 
-            label = Text(name, font_size=16, color=color)
+            label = Text(str(name), font_size=16, color=color)
             label.next_to(bar, DOWN, buff=0.15)
             self.labels.add(label)
 
             # Value label on top
-            val_label = Text(f"{bar_height:.3f}", font_size=14, color=axis_color)
+            val_label = Text(f"{float(bar_height):.3f}", font_size=14, color=axis_color)
             val_label.next_to(bar, UP, buff=0.08)
             self.labels.add(val_label)
 
