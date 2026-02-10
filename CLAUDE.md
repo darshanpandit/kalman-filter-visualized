@@ -21,11 +21,11 @@ PYTHONPATH=. python3 -m pytest tests/ -v
 # Precompute benchmark results (generates .npz files for Part 5 scenes)
 PYTHONPATH=. python3 benchmarks/precompute.py
 
-# Render a scene (low quality for development)
-PYTHONPATH=. manim -pql part1_kalman_filter/scene01_hook.py SceneHook
+# Render a scene (low quality for development, silent)
+PYTHONPATH=. manim -ql part1_kalman_filter/scene01_hook.py SceneHook
 
-# Render high quality
-PYTHONPATH=. manim -pqh part1_kalman_filter/scene01_hook.py SceneHook
+# Render high quality (silent)
+PYTHONPATH=. manim -qh part1_kalman_filter/scene01_hook.py SceneHook
 
 # Render to PNG (last frame only, faster for checking visuals)
 PYTHONPATH=. manim -ql --format png part1_kalman_filter/scene01_hook.py SceneHook
