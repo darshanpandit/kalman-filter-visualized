@@ -1,0 +1,103 @@
+PART 1: Kalman Filters (v2)
+SCENE 02: Red Meets Blue — "Two wrong answers, one right one"
+
+VOICES:
+  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
+  SKEPTIC: Azure en-US-JaneNeural, style=chat
+
+DATA:
+  source: none (synthetic parameters)
+  predicted_mean: [2.0, 1.0]
+  predicted_cov: [[1.2, 0.4], [0.4, 0.8]]
+  measurement: z = [3.5, 0.3]
+  R: [[0.5, 0.0], [0.0, 0.4]]
+
+= BEAT 1: The prediction =
+
+TITLE: "Red Meets Blue" (top, z_index=10)
+SHOW: StateSpace axes (x_range=[-1,6], y_range=[-2,4], labels="position x" and "position y")
+SHOW: GaussianEllipse ($COLOR_PREDICTION) at predicted_mean with predicted_cov
+TEXT: "Prediction" ($COLOR_PREDICTION, small, near ellipse)
+
+> [NARRATOR] Before the sensor says anything, we have a
+> prediction. We think the pedestrian is somewhere in this
+> red region. The ellipse isn't decoration — its shape is
+> the uncertainty. The tilt says position and velocity are
+> correlated.
+
+= BEAT 2: The measurement =
+
+SHOW: measurement dot at z ($COLOR_MEASUREMENT, scale-in)
+SHOW: GaussianEllipse ($COLOR_MEASUREMENT, fill_opacity=0.15) centered at z with R
+TEXT: "Measurement" ($COLOR_MEASUREMENT, small, near dot)
+
+> [NARRATOR] Then the sensor reports. A GPS reading, shown
+> in blue. Also uncertain. Also an ellipse.
+
+> [SKEPTIC] Two ellipses. Different centers, different
+> shapes. This feels like a committee meeting.
+
+> [NARRATOR] Except this committee always reaches a better
+> answer.
+
+= BEAT 3: The golden product =
+
+ANIMATE: dim prediction and measurement ellipses to opacity 0.15
+SHOW: GaussianEllipse ($COLOR_POSTERIOR) at posterior mean with posterior cov
+TEXT: "Posterior" ($COLOR_POSTERIOR, small, near posterior)
+
+> [NARRATOR] Multiply them. And look what happens.
+
+PAUSE: medium
+
+> [NARRATOR] The gold ellipse is smaller than both inputs.
+
+> [SKEPTIC] Always?
+
+> [NARRATOR] Always. That's a theorem. Two uncertain
+> beliefs, combined correctly, always produce a less
+> uncertain belief. This is the engine of the Kalman
+> Filter. Everything else is bookkeeping.
+
+PAUSE: long
+
+= BEAT 4: The pull =
+
+SHOW: dashed arrow from prediction center to posterior center ($COLOR_HIGHLIGHT, stroke=1.5)
+SHOW: dashed arrow from measurement center to posterior center ($COLOR_MEASUREMENT, stroke=1.5)
+
+> [NARRATOR] Notice where the gold sits. It's pulled toward
+> whichever input was more confident. Tight prediction,
+> sloppy sensor? The posterior barely moves from the
+> prediction. Tight sensor, wide prediction? It jumps
+> toward the measurement.
+
+> [SKEPTIC] So it's a weighted average.
+
+> [NARRATOR] Of the means, yes. But the covariance always
+> shrinks. That's the part that isn't obvious. That's the
+> part that makes it optimal.
+
+= BEAT 5: The equations =
+
+FADEOUT: arrows, labels
+ANIMATE: shrink axes to left side (scale 0.6)
+SHOW: Kalman gain equation on right: K = P^- H^T (H P^- H^T + R)^{-1} ($COLOR_HIGHLIGHT)
+SHOW: state update: x_hat = x^- + K(z - Hx^-) ($COLOR_POSTERIOR)
+SHOW: covariance update: P = (I - KH)P^- ($COLOR_POSTERIOR)
+
+> [NARRATOR] Here's the math. K is the Kalman gain — a
+> matrix that controls how much the measurement pulls the
+> estimate. When prediction uncertainty is large relative
+> to sensor noise, K is large and the measurement dominates.
+> When the prediction is tight, K shrinks and the model
+> dominates.
+
+> [SKEPTIC] That covariance update. It always gets smaller?
+
+> [NARRATOR] P is always less than or equal to P minus.
+> In the Loewner order. Information never hurts.
+
+PAUSE: medium
+
+FADEOUT: all

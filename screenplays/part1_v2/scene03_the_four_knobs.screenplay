@@ -1,0 +1,127 @@
+PART 1: Kalman Filters (v2)
+SCENE 03: The Four Knobs — "Model specification for engineers and econometricians"
+
+VOICES:
+  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
+  SKEPTIC: Azure en-US-JaneNeural, style=chat
+
+DATA:
+  source: none (synthetic parameters)
+  initial_mean: [1.0, 1.0]
+  initial_cov: [[0.5, 0.2], [0.2, 0.3]]
+  F: [[1, 1], [0, 1]]  (dt=1.0, constant velocity)
+  Q: [[0.3, 0.0], [0.0, 0.2]]
+  H: [[1, 0]]  (observe position only)
+  R: [[0.5]]
+
+= BEAT 1: The state vector =
+
+TITLE: "The Four Knobs" (top, z_index=10)
+SHOW: state vector display: x = [position, velocity]^T
+SHOW: StateSpace axes (x_range=[-2,6], y_range=[-2,4], labels="position" and "velocity")
+SHOW: GaussianEllipse ($COLOR_POSTERIOR) at initial_mean with initial_cov
+TEXT: "Current belief" ($COLOR_POSTERIOR, small)
+
+> [NARRATOR] A Kalman Filter tracks a state vector. For a
+> pedestrian, that's position and velocity bundled together.
+> Our current belief is this gold ellipse — center is the
+> best guess, shape is the uncertainty.
+
+> [NARRATOR] If you've worked with state-space models in
+> time series — Harvey, Durbin and Koopman — this is the
+> same object. Same math. The Kalman Filter is just the
+> recursive algorithm that updates it.
+
+= BEAT 2: F — the dynamics =
+
+SHOW: F matrix display on right side ($COLOR_HIGHLIGHT)
+TEXT: "F: your model of the world" (small, below F)
+ANIMATE: ellipse morphs to new mean [2.0, 1.0] with F*P*F^T covariance (shearing animation)
+
+> [NARRATOR] F is where you put your physics. For a
+> pedestrian walking at constant velocity, F says: new
+> position equals old position plus velocity times
+> delta-t. Simple. Wrong. But usefully wrong.
+
+> [NARRATOR] Watch what F does to the ellipse. It shears
+> it — because F couples position and velocity. If
+> velocity is high, position moves further. The
+> correlation tightens.
+
+= BEAT 3: Q — the humility dial =
+
+TEXT: "Q: how wrong your model is" ($COLOR_PROCESS_NOISE, replace previous)
+ANIMATE: ellipse inflates as Q is added, color shifts to $COLOR_PREDICTION
+
+> [NARRATOR] But your model is wrong. Pedestrians
+> accelerate, stop, turn. Q is how you admit that.
+> It inflates the ellipse — adds uncertainty back.
+
+> [SKEPTIC] What happens if you set Q to zero?
+
+> [NARRATOR] Then you're claiming your model is perfect.
+> The filter will believe you. Right up until it
+> diverges spectacularly. Kalman Filters are not
+> kind to hubris.
+
+PAUSE: short
+
+= BEAT 4: H and R — the sensor =
+
+FADEOUT: F matrix, labels
+SHOW: H matrix and R value on right side
+TEXT: "H: what the sensor sees" (small)
+
+> [NARRATOR] H maps the full state to what the sensor
+> actually measures. GPS gives you position, not velocity.
+> So H is just a projection — it picks out the components
+> the sensor can see.
+
+> [NARRATOR] R is sensor noise. A cheap GPS has large R.
+> A differential GPS station has small R. The filter
+> doesn't care which — it adapts.
+
+= BEAT 5: The full cycle =
+
+FADEOUT: matrices
+SHOW: predict-update cycle diagram (two boxes: "Predict" in $COLOR_PREDICTION, "Update" in $COLOR_POSTERIOR, with arrows forming a loop)
+
+> [NARRATOR] And that's the machine. Every timestep:
+> predict — F moves the ellipse forward, Q inflates it.
+> Update — the measurement pulls it back, K shrinks it.
+> Predict. Update. Predict. Update.
+
+> [SKEPTIC] That's it?
+
+> [NARRATOR] That's it. Four matrices, two steps, one
+> loop. Everything else — the Extended Kalman Filter,
+> the Unscented version, particle methods — they all
+> modify what happens inside those two boxes. The
+> architecture never changes.
+
+PAUSE: medium
+
+= BEAT 6: The equations =
+
+SHOW: four equations stacked on right side:
+  x^- = F * x_hat (predict mean, $COLOR_PREDICTION)
+  P^- = F * P * F^T + Q (predict cov, $COLOR_PREDICTION)
+  x_hat = x^- + K(z - Hx^-) (update mean, $COLOR_POSTERIOR)
+  P = (I - KH) * P^- (update cov, $COLOR_POSTERIOR)
+
+> [NARRATOR] Four equations. That's the complete algorithm.
+> If you've seen Best Linear Unbiased Prediction — BLUP —
+> in mixed models, you've seen half of this. The Kalman
+> Filter is BLUP, unrolled over time, with the covariance
+> propagated forward.
+
+> [SKEPTIC] That's a satisfying connection.
+
+> [NARRATOR] It should be. They're solving the same
+> optimization problem.
+
+NOTE: "Harvey (1989): Forecasting, Structural Time\nSeries Models, and the Kalman Filter."
+
+PAUSE: medium
+
+FADEOUT: all

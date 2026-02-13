@@ -1,0 +1,91 @@
+PART 1: Kalman Filters (v2)
+SCENE 01: The Most Deployed Algorithm — "You use it. You just don't know it."
+
+REFERENCES:
+  - Pellegrini et al. (2009) — ETH Zurich pedestrian dataset
+  - Kalman (1960) — A new approach to linear filtering and prediction problems
+
+VOICES:
+  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
+  SKEPTIC: Azure en-US-JaneNeural, style=chat
+
+DATA:
+  source: eth/pedestrian #171
+  measurement_noise: 0.6
+  max_steps: 60
+  seed: 42
+  filter: KalmanFilter(F=CV_4D, Q=0.1*I4, R=0.36*I2, P0=I4)
+
+= BEAT 1: Cold open =
+
+SHOW: single GPS dot pulsing at a wrong position (offset 1.5 units from true path)
+
+> [NARRATOR] According to your GPS, you're standing in the
+> middle of a parking lot. You're not. You're on the
+> sidewalk, ten meters away. Your phone is lying to you.
+
+PAUSE: medium
+
+= BEAT 2: The noisy reality =
+
+SHOW: measurement dots appearing in batches of 8 ($COLOR_MEASUREMENT, fill_opacity=0.8)
+
+> [NARRATOR] These are real GPS coordinates from the ETH
+> Zurich pedestrian dataset. Sixty readings. Every single
+> one of them is wrong.
+
+> [SKEPTIC] How wrong?
+
+> [NARRATOR] Wrong enough that if you connected the dots,
+> you'd think this person was lost.
+
+PAUSE: short
+
+= BEAT 3: The true path =
+
+SHOW: true path as white dashed line (40 dashes, stroke_width=2, opacity=0.8)
+
+> [NARRATOR] Here's where they actually walked. Smooth.
+> Predictable. And completely invisible to the sensor.
+> All we have are those blue dots. The question is:
+> can we recover this path?
+
+PAUSE: medium
+
+= BEAT 4: The reveal =
+
+SHOW: KF filtered estimate path ($COLOR_POSTERIOR, stroke_width=3, Create animation)
+
+> [SKEPTIC] So you average them.
+
+> [NARRATOR] No. Averaging uses the data but ignores the
+> physics. Pedestrians don't teleport between readings.
+> Instead, you combine two imperfect things — a prediction
+> from a model that's too simple, and a measurement from
+> a sensor that's too noisy — and you get something better
+> than either one.
+
+PAUSE: long
+
+= BEAT 5: The name =
+
+TITLE: "The Kalman Filter" (top, z_index=10)
+TEXT: "Kalman, 1960" (below title, small)
+
+> [NARRATOR] This is the Kalman Filter. Rudolf Kalman,
+> 1960. It guided Apollo to the moon. It's running right
+> now in every GPS chip, every autopilot, every phone in
+> this room. Traffic management systems run it every few
+> seconds. Power grids use it to estimate ten thousand
+> bus voltages in real time.
+
+> [SKEPTIC] I've heard of it.
+
+> [NARRATOR] Then you know the name. By the end of this
+> series, you'll know the geometry.
+
+NOTE: "Kalman (1960): A New Approach to Linear\nFiltering and Prediction Problems."
+
+PAUSE: long
+
+FADEOUT: all
