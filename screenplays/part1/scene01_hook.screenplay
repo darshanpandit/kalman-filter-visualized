@@ -1,0 +1,56 @@
+PART 1: Kalman Filters
+SCENE 01: Hook — "Where is the pedestrian?"
+
+REFERENCES:
+  - Pellegrini et al. (2009) — ETH Zurich pedestrian dataset
+
+DATA:
+  source: eth/pedestrian #171
+  measurement_noise: 0.6
+  max_steps: 60
+  filter: KalmanFilter(F=CV_4D, Q=0.1*I4, R=0.36*I2, P0=I4)
+
+= BEAT 1: Noisy measurements =
+
+TITLE: "Where is the pedestrian?" (top)
+SHOW: measurement dots appearing in batches of 8, $COLOR_MEASUREMENT, fill_opacity=0.8
+
+> Where is the pedestrian? These are real coordinates from
+> the ETH Zurich pedestrian dataset. Each ping gives a
+> position estimate, but look at how noisy these
+> measurements are.
+
+PAUSE: medium
+
+= BEAT 2: The true path =
+
+TEXT: "Your phone says you're here... but are you really?" (below title, small)
+SHOW: true path as white dashed line (40 dashes, stroke_width=2, opacity=0.8)
+
+> Your phone says you're somewhere around here, but where
+> are you really? Here's the actual path — smooth and
+> continuous. But all we get are these scattered,
+> error-prone observations.
+
+= BEAT 3: The Kalman tease =
+
+TEXT: "Can we recover the true trajectory from noisy measurements?" (bottom, $COLOR_HIGHLIGHT)
+SHOW: KF filtered estimate path ($COLOR_POSTERIOR, stroke_width=3, Create animation)
+TEXT: "Yes — with a Kalman Filter." (replace previous, $COLOR_POSTERIOR, heading size)
+
+> Can we recover the true trajectory from noisy
+> measurements? Yes — with a Kalman Filter. By
+> intelligently combining predictions with measurements,
+> we can reconstruct something remarkably close to
+> the truth.
+
+PAUSE: long
+
+= BEAT 4: Series promise =
+
+> Over the next few videos, I'll show you exactly how
+> this works.
+
+PAUSE: long
+
+FADEOUT: all

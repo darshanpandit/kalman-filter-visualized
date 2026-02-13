@@ -1,0 +1,54 @@
+PART 1: Kalman Filters
+SCENE 04: State Space — "Position + Velocity"
+
+DATA:
+  source: none (synthetic parameters)
+  state_mean: [1.0, 0.5]
+  cov_uncorrelated: [[1.0, 0.0], [0.0, 0.5]]
+  cov_correlated: [[1.0, 0.7], [0.7, 0.5]]
+
+= BEAT 1: Why we need velocity =
+
+TITLE: "The State Vector" (top)
+SHOW: state vector equation: x = [position, velocity]^T
+
+> For a moving pedestrian, position alone isn't enough.
+> We also need velocity to predict where they'll be next.
+> So we bundle both into a state vector.
+
+= BEAT 2: The 2D state space =
+
+ANIMATE: shrink equation to top-right corner
+SHOW: StateSpace axes (x_range=[-4,4], y_range=[-3,3], labels="position" and "velocity")
+SHOW: gold dot at (1.0, 0.5) with label "x_hat = [1.0, 0.5]^T"
+
+> This gives us a two-dimensional state space. Every point
+> represents a possible state — a position and a velocity.
+
+= BEAT 3: Uncertainty as an ellipse =
+
+TEXT: "But how certain are we?" (briefly, then fade)
+SHOW: GaussianEllipse ($COLOR_POSTERIOR) at state_mean with cov_uncorrelated, show_axes=True
+SHOW: covariance matrix P (uncorrelated version)
+TEXT: "No correlation: axis-aligned" (small)
+
+> But how certain are we? The covariance matrix P captures
+> this uncertainty as an ellipse. When there's no
+> correlation, the ellipse is axis-aligned.
+
+= BEAT 4: Correlation tilts the ellipse =
+
+FADEOUT: uncorrelated ellipse, axis-aligned note
+SHOW: GaussianEllipse ($COLOR_HIGHLIGHT) at state_mean with cov_correlated
+ANIMATE: transform covariance display to show off-diagonal terms
+TEXT: "Correlation tilts the ellipse" (small)
+TEXT: "If position is ahead, velocity is probably higher" (small, below)
+
+> But when position and velocity are correlated — if the
+> pedestrian is ahead of expected, they're probably moving
+> faster — the off-diagonal term tilts the ellipse. This
+> geometric shape encodes everything about our uncertainty.
+
+PAUSE: medium
+
+FADEOUT: all

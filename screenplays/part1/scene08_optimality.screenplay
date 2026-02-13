@@ -1,0 +1,69 @@
+PART 1: Kalman Filters
+SCENE 08: Optimality & Teaser — "Why nothing beats it"
+
+DATA:
+  source: none (theoretical scene)
+
+= BEAT 1: The claim =
+
+TITLE: "Why the Kalman Filter is Optimal" (top)
+SHOW: theorem block ($COLOR_HIGHLIGHT heading):
+  "Among all linear estimators, the Kalman Filter
+   minimizes the mean squared estimation error."
+
+> The Kalman Filter isn't just good — it's provably
+> optimal. Among all linear estimators, it minimizes
+> the mean squared error.
+
+= BEAT 2: The objective =
+
+SHOW: objective function equation ($COLOR_EQUATION):
+  min E[ (x - x_hat)^T (x - x_hat) ]
+
+> We want to minimize the expected squared difference
+> between the true state and our estimate — the trace
+> of the error covariance.
+
+PAUSE: medium
+
+= BEAT 3: Proof sketch =
+
+TEXT: "Proof sketch:" (below objective)
+SHOW: three proof steps (sequentially):
+  1. "Set d/dK tr(P_k) = 0"
+  2. "Solve for K that minimizes tr(P_k)"
+  3. "=> K = P^- H^T (H P^- H^T + R)^{-1}" ($COLOR_HIGHLIGHT)
+
+> The proof is elegant: take the derivative of the error
+> covariance with respect to K, set it to zero, and
+> solve. You get exactly the Kalman gain formula.
+
+PAUSE: long
+
+= BEAT 4: Conditions =
+
+SHOW: conditions block (bottom):
+  "This holds when:"
+  - "System is linear (F, H are matrices)"
+  - "Noise is Gaussian (w_k, v_k ~ N)"
+
+> But this optimality requires two conditions: linear
+> dynamics and Gaussian noise. When both hold, no
+> estimator can beat the Kalman Filter.
+
+PAUSE: long
+
+= BEAT 5: Teaser =
+
+FADEOUT: all previous
+TEXT: "But what if the system isn't linear?" (center, $COLOR_HIGHLIGHT)
+TEXT: "Next: The Extended Kalman Filter" (below, smaller)
+
+> But what if the system isn't linear? What if the
+> pedestrian turns corners or the sensor model involves
+> trigonometry? That's where the Extended Kalman Filter
+> comes in. See you in Part 2.
+
+PAUSE: long
+
+FADEOUT: all

@@ -1,0 +1,69 @@
+PART 1: Kalman Filters
+SCENE 05: Prediction Step — "The ellipse shears and grows"
+
+DATA:
+  source: none (synthetic parameters)
+  initial_mean: [1.0, 1.0]
+  initial_cov: [[0.5, 0.2], [0.2, 0.3]]
+  F: [[1, 1], [0, 1]]  (dt=1.0, constant velocity)
+  Q: [[0.3, 0.0], [0.0, 0.2]]
+
+= BEAT 1: The prediction equations =
+
+TITLE: "Prediction Step" (top)
+SHOW: state prediction equation: x_hat_k^- = F * x_hat_{k-1}
+  - left side in $COLOR_PREDICTION, F in $COLOR_HIGHLIGHT
+SHOW: covariance equation: P_k^- = F * P_{k-1} * F^T + Q
+  - Q in $COLOR_PROCESS_NOISE
+
+> Every Kalman Filter cycle begins with prediction. The
+> state evolves through matrix F, and uncertainty grows
+> through F P F-transpose plus Q.
+
+= BEAT 2: What F means =
+
+SHOW: F matrix display on right side ($COLOR_HIGHLIGHT)
+TEXT: "Position updates with velocity" (small, below F)
+
+> For a pedestrian, F encodes constant-velocity motion:
+> new position equals old position plus velocity times
+> delta-t.
+
+= BEAT 3: Current estimate =
+
+SHOW: StateSpace axes (x_range=[-2,6], y_range=[-2,3])
+SHOW: GaussianEllipse ($COLOR_POSTERIOR) at [1.0, 1.0] with initial_cov
+TEXT: "Current estimate" ($COLOR_POSTERIOR, small)
+
+> Here's our current estimate as an ellipse in state
+> space. The center is our best guess, the shape captures
+> uncertainty.
+
+= BEAT 4: F shears the ellipse =
+
+TEXT: "Apply F: ellipse shears" ($COLOR_HIGHLIGHT, replace label)
+ANIMATE: ellipse morphs to new mean [2.0, 1.0] with F*P*F^T covariance
+
+> Now apply F. The ellipse shears — the state transition
+> couples position and velocity. If velocity is high,
+> position moves farther.
+
+= BEAT 5: Q expands it =
+
+TEXT: "Add Q: uncertainty grows" ($COLOR_PROCESS_NOISE, replace label)
+ANIMATE: ellipse expands as Q is added, color changes to $COLOR_PREDICTION
+
+> But motion isn't perfectly predictable. Process noise Q
+> inflates the ellipse — we're now less certain than
+> before.
+
+= BEAT 6: Predicted state =
+
+TEXT: "Predicted state" ($COLOR_PREDICTION, replace label)
+
+> The result is our predicted state in red — our best
+> guess before seeing the next measurement.
+
+PAUSE: medium
+
+FADEOUT: all

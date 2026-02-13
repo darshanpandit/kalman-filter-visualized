@@ -1,0 +1,73 @@
+PART 1: Kalman Filters
+SCENE 03: Gaussian Multiplication — "Combining two beliefs"
+
+DATA:
+  source: none (synthetic parameters)
+  prediction: mu=2.0, var=1.5
+  measurement: mu=4.0, var=0.8
+  product: computed via gaussian_product_1d
+
+= BEAT 1: The prediction =
+
+TITLE: "Multiplying Two Gaussians" (top)
+SHOW: axes (x_range=[-1,7], y_range=[0,0.6])
+SHOW: red Gaussian curve at mu=2.0, var=1.5 ($COLOR_PREDICTION) with label "Prediction"
+
+> Let's start simple: one dimension. This red curve is
+> our prediction — we think the pedestrian is around
+> position 2, with some uncertainty.
+
+= BEAT 2: The measurement arrives =
+
+SHOW: blue Gaussian curve at mu=4.0, var=0.8 ($COLOR_MEASUREMENT) with label "Measurement"
+
+> Now a measurement arrives in blue, saying the position
+> is closer to 4. Two sources of information disagreeing —
+> how do we combine them?
+
+= BEAT 3: The product formula =
+
+ANIMATE: shrink axes to left side (scale 0.65)
+FADEOUT: curve labels
+SHOW: mean formula on right side
+SHOW: variance formula below it
+
+> When you multiply two Gaussians, you get another
+> Gaussian. The new mean is a weighted average, and
+> the new variance comes from this elegant formula.
+
+= BEAT 4: The golden result =
+
+SHOW: gold product Gaussian ($COLOR_POSTERIOR)
+TEXT: "Always narrower than either input!" ($COLOR_POSTERIOR)
+
+> Here's the result in gold. Notice something crucial:
+> the product is always narrower than either input.
+> Combining information reduces uncertainty — this is
+> the core principle of the Kalman Filter.
+
+= BEAT 5: The Kalman gain =
+
+FADEOUT: narrower insight
+SHOW: Kalman gain equation: K = sigma1^2 / (sigma1^2 + sigma2^2) ($COLOR_HIGHLIGHT)
+TEXT: "Kalman Gain" label
+SHOW: rewritten update: mu_new = mu_1 + K * (mu_2 - mu_1)
+
+> We can rewrite this using the Kalman gain K. It's a
+> blending weight: K equals zero means trust the
+> prediction completely, K equals one means trust the
+> measurement. The filter automatically tunes this balance.
+
+= BEAT 6: K interpretation =
+
+SHOW: interpretation panel
+  - "K=0 → trust prediction" ($COLOR_PREDICTION)
+  - "K=1 → trust measurement" ($COLOR_MEASUREMENT)
+
+> K equals zero means we trust the prediction. K equals
+> one means we trust the measurement. In between, K
+> automatically balances based on the uncertainties.
+
+PAUSE: medium
+
+FADEOUT: all

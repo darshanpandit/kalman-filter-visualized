@@ -1,0 +1,54 @@
+PART 1: Kalman Filters
+SCENE 02: Bayesian Foundations — "Prior, Likelihood, Posterior"
+
+DATA:
+  source: none (pure concept scene)
+
+= BEAT 1: Bayes' theorem =
+
+TITLE: "Bayesian State Estimation" (top)
+SHOW: Bayes' theorem equation: P(x|z) proportional to P(z|x) . P(x)
+
+> At its heart, the Kalman Filter is Bayesian state
+> estimation. Here's Bayes' theorem: the posterior is
+> proportional to the likelihood times the prior.
+
+= BEAT 2: Color-coded terms =
+
+ANIMATE: color-code each term and add labels
+  - P(x|z) → $COLOR_POSTERIOR with label "Posterior"
+  - P(z|x) → $COLOR_MEASUREMENT with label "Likelihood"
+  - P(x) → $COLOR_PREDICTION with label "Prior"
+
+> The posterior in gold is what we want — our updated
+> belief. The likelihood in blue captures the sensor
+> model. And the prior in red is everything we knew
+> before the measurement.
+
+= BEAT 3: Recursive form =
+
+FADEOUT: labels
+TEXT: "Recursive Bayesian Estimation" (heading)
+SHOW: recursive equation: P(x_k | z_{1:k}) proportional to P(z_k | x_k) . P(x_k | z_{1:k-1})
+  - same color coding as above
+
+> Now the beautiful part: in filtering, this becomes
+> recursive. The posterior at time k depends on the
+> current measurement times the prior from all
+> previous steps.
+
+= BEAT 4: The feedback loop =
+
+TEXT: "Today's posterior becomes tomorrow's prior" ($COLOR_HIGHLIGHT)
+SHOW: curved arrow from posterior term looping back to prior term
+
+> Today's posterior becomes tomorrow's prior — a
+> continuous loop of prediction and correction. For
+> linear systems with Gaussian noise, this has an exact
+> closed-form solution: the Kalman Filter.
+
+TEXT: "For linear + Gaussian: the Kalman Filter" (bottom)
+
+PAUSE: long
+
+FADEOUT: all

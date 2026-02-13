@@ -1,0 +1,80 @@
+PART 1: Kalman Filters
+SCENE 06: Measurement Update — "Red + Blue = Gold"
+
+DATA:
+  source: none (synthetic parameters)
+  predicted_mean: [2.0, 1.0]
+  predicted_cov: [[1.2, 0.4], [0.4, 0.6]]
+  measurement: z = [2.8, 0.5]
+  H: I2 (observe full state for visualization)
+  R: 0.5*I2
+
+= BEAT 1: The measurement model =
+
+TITLE: "Measurement Update" (top)
+SHOW: StateSpace axes (x_range=[-1,5], y_range=[-2,3])
+SHOW: measurement model equation on right: z_k = H*x_k + v_k, v_k ~ N(0,R)
+
+> Now we get a measurement. The sensor observes the state
+> through matrix H, corrupted by noise with covariance R.
+
+= BEAT 2: Our prediction =
+
+SHOW: GaussianEllipse ($COLOR_PREDICTION) at predicted_mean with predicted_cov
+TEXT: label "x_hat^-" near ellipse
+
+> Here's our prediction from the last step — the red
+> ellipse. This is our prior belief before the
+> measurement arrives.
+
+= BEAT 3: Measurement arrives =
+
+SHOW: measurement dot at z ($COLOR_MEASUREMENT, scale-in animation)
+SHOW: measurement uncertainty ellipse ($COLOR_MEASUREMENT) using R
+TEXT: label "z" near dot
+
+> The measurement comes in — shown in blue. It gives us
+> noisy information about the state.
+
+= BEAT 4: The innovation =
+
+SHOW: innovation equation on right
+SHOW: white arrow from prediction center to measurement center, labeled "y_tilde"
+
+> The innovation is the difference between what we
+> measured and what we expected. It's the surprise — how
+> much the measurement disagrees with our prediction.
+
+= BEAT 5: Kalman gain =
+
+SHOW: Kalman gain equation: K = P^- * H^T * (H*P^-*H^T + R)^{-1} ($COLOR_HIGHLIGHT)
+
+> The Kalman gain K balances prediction uncertainty
+> against measurement noise. This is the optimal
+> weighting.
+
+= BEAT 6: The golden posterior =
+
+SHOW: state update equation ($COLOR_POSTERIOR)
+FADEOUT: innovation arrow
+ANIMATE: dim prediction and measurement ellipses to opacity 0.15
+SHOW: GaussianEllipse ($COLOR_POSTERIOR) at posterior mean with Joseph-form cov
+TEXT: label "x_hat_k" near posterior
+
+> The update is elegant: take the prediction, add K times
+> the innovation. The gold posterior is smaller than both
+> inputs — information fusion reduces uncertainty.
+
+= BEAT 7: Covariance shrinks =
+
+SHOW: covariance update equation ($COLOR_POSTERIOR)
+SHOW: Joseph form note (small, muted)
+TEXT: "Posterior is smaller!" ($COLOR_POSTERIOR, below axes)
+
+> The covariance shrinks too. In practice, we use the
+> numerically stable Joseph form. The posterior is always
+> smaller than the prediction.
+
+PAUSE: medium
+
+FADEOUT: all

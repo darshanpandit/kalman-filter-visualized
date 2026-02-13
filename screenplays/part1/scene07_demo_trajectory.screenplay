@@ -1,0 +1,63 @@
+PART 1: Kalman Filters
+SCENE 07: Demo — "Watching the filter work"
+
+REFERENCES:
+  - Pellegrini et al. (2009) — ETH Zurich pedestrian dataset
+
+DATA:
+  source: eth/hotel/pedestrian #236
+  measurement_noise: 0.5
+  max_steps: 36
+  seed: 7
+  filter: KalmanFilter(F=CV_4D, q=0.05 continuous white noise accel, R=0.25*I2, P0=diag(1,1,0.5,0.5))
+
+= BEAT 1: Setup =
+
+TITLE: "Kalman Filter in Action" (top, z_index=10)
+SHOW: legend (top-left, z_index=10)
+  - white dot: "True path"
+  - blue dot: "Measurement"
+  - gold dot: "KF estimate"
+
+> Let's watch the Kalman Filter track a real pedestrian
+> from the ETH dataset. White is the true path, blue dots
+> are GPS measurements, and gold is the filter's estimate.
+
+= BEAT 2: Step-by-step filtering =
+
+SHOW: gold estimate dot ($COLOR_POSTERIOR) at initial position
+SHOW: GaussianEllipse ($COLOR_POSTERIOR, 2-sigma, fill_opacity=0.15)
+ANIMATE: loop over all 36 measurements, for each step:
+  - FadeIn measurement dot ($COLOR_MEASUREMENT, opacity=0.6)
+  - Transform ellipse to new mean/covariance (ellipse "breathes")
+  - Move estimate dot to new position
+  - Extend true trail (white, stroke=1.5, opacity=0.6)
+  - Extend estimate trail (gold, stroke=2.5)
+  - Camera gently follows every 5th step
+  - Each step: 0.25 seconds
+
+> Each cycle, a new measurement arrives. The filter
+> predicts, compares to the measurement, and updates.
+> Watch the uncertainty ellipse breathe — growing during
+> prediction, shrinking during update.
+
+= BEAT 3: Zoom out =
+
+ANIMATE: camera zooms out to full picture (ORIGIN, width=14)
+
+> Let's zoom out and see the full picture.
+
+= BEAT 4: Results =
+
+TEXT: "Smooth trajectory from noisy measurements" ($COLOR_POSTERIOR, bottom)
+
+> From noisy, scattered measurements, the Kalman Filter
+> has reconstructed a smooth, accurate trajectory. If the
+> filter struggles on any sharp segments, that's a
+> limitation of the linear model. Part 2 addresses this.
+
+NOTE: "Linear KF assumes straight-line motion.\nPart 2 addresses nonlinear paths."
+
+PAUSE: long
+
+FADEOUT: all
