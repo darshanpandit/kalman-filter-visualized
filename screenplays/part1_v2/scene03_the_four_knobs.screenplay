@@ -2,8 +2,8 @@ PART 1: Kalman Filters (v2)
 SCENE 03: The Four Knobs — "Model specification for engineers and econometricians"
 
 VOICES:
-  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
-  SKEPTIC: Azure en-US-JaneNeural, style=chat
+  NARRATOR: Azure en-US-JennyNeural, style=chat
+  SKEPTIC: Azure en-US-TonyNeural, style=friendly
 
 DATA:
   source: none (synthetic parameters)
@@ -41,7 +41,9 @@ ANIMATE: ellipse morphs to new mean [2.0, 1.0] with F*P*F^T covariance (shearing
 > [NARRATOR] F is where you put your physics. For a
 > pedestrian walking at constant velocity, F says: new
 > position equals old position plus velocity times
-> delta-t. Simple. Wrong. But usefully wrong.
+> delta-t.
+
+> [NARRATOR, rate=-10%] Simple. Wrong. But usefully wrong.
 
 > [NARRATOR] Watch what F does to the ellipse. It shears
 > it — because F couples position and velocity. If
@@ -60,8 +62,10 @@ ANIMATE: ellipse inflates as Q is added, color shifts to $COLOR_PREDICTION
 > [SKEPTIC] What happens if you set Q to zero?
 
 > [NARRATOR] Then you're claiming your model is perfect.
-> The filter will believe you. Right up until it
-> diverges spectacularly. Kalman Filters are not
+> The filter will believe you — right up until it
+> diverges spectacularly.
+
+> [NARRATOR, style=whispering] Kalman Filters are not
 > kind to hubris.
 
 PAUSE: short
@@ -91,12 +95,12 @@ SHOW: predict-update cycle diagram (two boxes: "Predict" in $COLOR_PREDICTION, "
 > Update — the measurement pulls it back, K shrinks it.
 > Predict. Update. Predict. Update.
 
-> [SKEPTIC] That's it?
+> [SKEPTIC, rate=+10%] That's it?
 
-> [NARRATOR] That's it. Four matrices, two steps, one
-> loop. Everything else — the Extended Kalman Filter,
-> the Unscented version, particle methods — they all
-> modify what happens inside those two boxes. The
+> [NARRATOR, style=newscast] That's it. Four matrices, two
+> steps, one loop. Everything else — the Extended Kalman
+> Filter, the Unscented version, particle methods — they
+> all modify what happens inside those two boxes. The
 > architecture never changes.
 
 PAUSE: medium
@@ -115,10 +119,10 @@ SHOW: four equations stacked on right side:
 > Filter is BLUP, unrolled over time, with the covariance
 > propagated forward.
 
-> [SKEPTIC] That's a satisfying connection.
+> [SKEPTIC, style=hopeful] That's a satisfying connection.
 
-> [NARRATOR] It should be. They're solving the same
-> optimization problem.
+> [NARRATOR, rate=-10%] It should be. They're solving the
+> same optimization problem.
 
 NOTE: "Harvey (1989): Forecasting, Structural Time\nSeries Models, and the Kalman Filter."
 

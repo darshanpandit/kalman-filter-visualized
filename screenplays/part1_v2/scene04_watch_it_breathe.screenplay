@@ -5,8 +5,8 @@ REFERENCES:
   - Pellegrini et al. (2009) — ETH Zurich pedestrian dataset
 
 VOICES:
-  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
-  SKEPTIC: Azure en-US-JaneNeural, style=chat
+  NARRATOR: Azure en-US-JennyNeural, style=chat
+  SKEPTIC: Azure en-US-TonyNeural, style=friendly
 
 DATA:
   source: eth/hotel/pedestrian #236
@@ -23,7 +23,7 @@ SHOW: legend (top-left, z_index=10)
   - blue dot: "Measurement"
   - gold dot: "KF estimate"
 
-> [NARRATOR] Enough theory. Let's run it.
+> [NARRATOR, style=excited] Enough theory. Let's run it.
 
 > [NARRATOR] Real pedestrian, real data, ETH Zurich hotel
 > entrance. White is truth, blue is GPS, gold is the
@@ -52,7 +52,7 @@ PAUSE: short
 
 ANIMATE: continue filtering, skeptic reacts at key moments
 
-> [SKEPTIC] That ellipse is enormous at the start.
+> [SKEPTIC, style=excited] That ellipse is enormous.
 
 > [NARRATOR] It hasn't seen much data yet. Give it a moment.
 
@@ -60,16 +60,15 @@ PAUSE: short
 
 > [SKEPTIC] It's tightening up.
 
-> [NARRATOR] Confidence grows with evidence. By step ten,
-> it's locked on.
+> [NARRATOR, style=hopeful] Confidence grows with evidence.
+> By step ten, it's locked on.
 
 PAUSE: short
 
 > [SKEPTIC] It overshot that corner.
 
-> [NARRATOR] Linear model, nonlinear world. It assumed a
-> straight line and the pedestrian disagreed. We'll fix
-> that in Part 2.
+> [NARRATOR, rate=-15%] Linear model, nonlinear world.
+> Story of my career.
 
 = BEAT 3: Zoom out =
 
@@ -86,13 +85,14 @@ PAUSE: medium
 
 TEXT: "Smooth trajectory from noisy data" ($COLOR_POSTERIOR, bottom)
 
-> [SKEPTIC] I'm mildly impressed.
+> [SKEPTIC, rate=-15%] I'm mildly impressed.
 
 > [NARRATOR] You should be. This is optimal.
 
-> [SKEPTIC] You can't just say optimal without proof.
+> [SKEPTIC, style=unfriendly] You can't just say optimal
+> without proof.
 
-> [NARRATOR] Fair. That's next.
+> [NARRATOR, style=newscast] Fair. That's next.
 
 PAUSE: long
 

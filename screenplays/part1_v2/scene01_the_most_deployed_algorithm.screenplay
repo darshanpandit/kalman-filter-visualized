@@ -6,8 +6,8 @@ REFERENCES:
   - Kalman (1960) — A new approach to linear filtering and prediction problems
 
 VOICES:
-  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
-  SKEPTIC: Azure en-US-JaneNeural, style=chat
+  NARRATOR: Azure en-US-JennyNeural, style=chat
+  SKEPTIC: Azure en-US-TonyNeural, style=friendly
 
 DATA:
   source: eth/pedestrian #171
@@ -22,7 +22,9 @@ SHOW: single GPS dot pulsing at a wrong position (offset 1.5 units from true pat
 
 > [NARRATOR] According to your GPS, you're standing in the
 > middle of a parking lot. You're not. You're on the
-> sidewalk, ten meters away. Your phone is lying to you.
+> sidewalk, ten meters away.
+
+> [NARRATOR, rate=-10%] Your phone is lying to you.
 
 PAUSE: medium
 
@@ -31,8 +33,9 @@ PAUSE: medium
 SHOW: measurement dots appearing in batches of 8 ($COLOR_MEASUREMENT, fill_opacity=0.8)
 
 > [NARRATOR] These are real GPS coordinates from the ETH
-> Zurich pedestrian dataset. Sixty readings. Every single
-> one of them is wrong.
+> Zurich pedestrian dataset. Sixty readings.
+
+> [NARRATOR, rate=-15%] Every single one of them is wrong.
 
 > [SKEPTIC] How wrong?
 
@@ -47,7 +50,7 @@ SHOW: true path as white dashed line (40 dashes, stroke_width=2, opacity=0.8)
 
 > [NARRATOR] Here's where they actually walked. Smooth.
 > Predictable. And completely invisible to the sensor.
-> All we have are those blue dots. The question is:
+> All we have are those blue dots. The question is —
 > can we recover this path?
 
 PAUSE: medium
@@ -72,17 +75,19 @@ PAUSE: long
 TITLE: "The Kalman Filter" (top, z_index=10)
 TEXT: "Kalman, 1960" (below title, small)
 
-> [NARRATOR] This is the Kalman Filter. Rudolf Kalman,
-> 1960. It guided Apollo to the moon. It's running right
-> now in every GPS chip, every autopilot, every phone in
-> this room. Traffic management systems run it every few
-> seconds. Power grids use it to estimate ten thousand
-> bus voltages in real time.
+> [NARRATOR, style=newscast] This is the Kalman Filter.
+> Rudolf Kalman, 1960. It guided Apollo to the moon. It's
+> running right now in every GPS chip, every autopilot,
+> every phone in this room. Traffic management systems
+> run it every few seconds. Power grids use it to estimate
+> ten thousand bus voltages in real time.
 
-> [SKEPTIC] I've heard of it.
+> [SKEPTIC, rate=-10%] I've heard of it.
 
-> [NARRATOR] Then you know the name. By the end of this
-> series, you'll know the geometry.
+> [NARRATOR] Then you know the name.
+
+> [NARRATOR, style=hopeful] By the end of this series,
+> you'll know the geometry.
 
 NOTE: "Kalman (1960): A New Approach to Linear\nFiltering and Prediction Problems."
 

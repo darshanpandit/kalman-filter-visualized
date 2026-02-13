@@ -2,8 +2,8 @@ PART 1: Kalman Filters (v2)
 SCENE 02: Red Meets Blue — "Two wrong answers, one right one"
 
 VOICES:
-  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
-  SKEPTIC: Azure en-US-JaneNeural, style=chat
+  NARRATOR: Azure en-US-JennyNeural, style=chat
+  SKEPTIC: Azure en-US-TonyNeural, style=friendly
 
 DATA:
   source: none (synthetic parameters)
@@ -34,8 +34,8 @@ TEXT: "Measurement" ($COLOR_MEASUREMENT, small, near dot)
 > [NARRATOR] Then the sensor reports. A GPS reading, shown
 > in blue. Also uncertain. Also an ellipse.
 
-> [SKEPTIC] Two ellipses. Different centers, different
-> shapes. This feels like a committee meeting.
+> [SKEPTIC, style=cheerful] Two ellipses. Different centers,
+> different shapes. This feels like a committee meeting.
 
 > [NARRATOR] Except this committee always reaches a better
 > answer.
@@ -50,13 +50,14 @@ TEXT: "Posterior" ($COLOR_POSTERIOR, small, near posterior)
 
 PAUSE: medium
 
-> [NARRATOR] The gold ellipse is smaller than both inputs.
+> [NARRATOR, style=newscast] The gold ellipse is smaller
+> than both inputs.
 
 > [SKEPTIC] Always?
 
-> [NARRATOR] Always. That's a theorem. Two uncertain
-> beliefs, combined correctly, always produce a less
-> uncertain belief. This is the engine of the Kalman
+> [NARRATOR, rate=-10%] Always. That's a theorem. Two
+> uncertain beliefs, combined correctly, always produce a
+> less uncertain belief. This is the engine of the Kalman
 > Filter. Everything else is bookkeeping.
 
 PAUSE: long
@@ -68,15 +69,16 @@ SHOW: dashed arrow from measurement center to posterior center ($COLOR_MEASUREME
 
 > [NARRATOR] Notice where the gold sits. It's pulled toward
 > whichever input was more confident. Tight prediction,
-> sloppy sensor? The posterior barely moves from the
-> prediction. Tight sensor, wide prediction? It jumps
-> toward the measurement.
+> sloppy sensor? The posterior barely moves. Tight sensor,
+> wide prediction? It jumps toward the measurement.
 
 > [SKEPTIC] So it's a weighted average.
 
 > [NARRATOR] Of the means, yes. But the covariance always
-> shrinks. That's the part that isn't obvious. That's the
-> part that makes it optimal.
+> shrinks. That's the part that isn't obvious.
+
+> [NARRATOR, style=whispering] That's the part that makes
+> it optimal.
 
 = BEAT 5: The equations =
 
@@ -95,8 +97,10 @@ SHOW: covariance update: P = (I - KH)P^- ($COLOR_POSTERIOR)
 
 > [SKEPTIC] That covariance update. It always gets smaller?
 
-> [NARRATOR] P is always less than or equal to P minus.
-> In the Loewner order. Information never hurts.
+> [NARRATOR, style=newscast] P is always less than or equal
+> to P minus. In the Loewner order.
+
+> [NARRATOR, style=whispering] Information never hurts.
 
 PAUSE: medium
 

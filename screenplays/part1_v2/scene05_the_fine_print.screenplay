@@ -2,8 +2,8 @@ PART 1: Kalman Filters (v2)
 SCENE 05: The Fine Print — "Every optimality theorem has conditions"
 
 VOICES:
-  NARRATOR: Azure en-US-DavisNeural, style=newscast-casual
-  SKEPTIC: Azure en-US-JaneNeural, style=chat
+  NARRATOR: Azure en-US-JennyNeural, style=chat
+  SKEPTIC: Azure en-US-TonyNeural, style=friendly
 
 DATA:
   source: curated sharp-turn trajectory for failure demo
@@ -20,14 +20,14 @@ SHOW: conditions below theorem:
   - "Linear dynamics (F, H are matrices)"
   - "Gaussian noise (w, v ~ N)"
 
-> [NARRATOR] The Kalman Filter is the minimum mean squared
-> error estimator. The best you can do. If the system is
-> linear and the noise is Gaussian, no estimator — no
-> matter how clever — can beat it.
+> [NARRATOR, style=newscast] The Kalman Filter is the
+> minimum mean squared error estimator. The best you can
+> do. If the system is linear and the noise is Gaussian,
+> no estimator — no matter how clever — can beat it.
 
-> [SKEPTIC] Big if.
+> [SKEPTIC, rate=+10%] Big if.
 
-> [NARRATOR] Enormous if.
+> [NARRATOR, rate=-10%] Enormous if.
 
 PAUSE: medium
 
@@ -40,9 +40,11 @@ SHOW: proof steps (sequentially, $COLOR_EQUATION):
 
 > [NARRATOR] The proof is elegant. You write the error
 > covariance as a function of K, differentiate, set it to
-> zero. Out falls exactly the Kalman gain. The gain isn't
-> a design choice — it's the unique solution to an
-> optimization problem.
+> zero. Out falls exactly the Kalman gain.
+
+> [NARRATOR, style=whispering] The gain isn't a design
+> choice — it's the unique solution to an optimization
+> problem.
 
 > [SKEPTIC] So the gain is derived, not chosen.
 
@@ -65,9 +67,10 @@ TEXT: "Linear KF on curved path" ($COLOR_PREDICTION, small)
 
 > [NARRATOR] Obviously. And when the dynamics are nonlinear,
 > the Kalman Filter doesn't just degrade gracefully.
-> It can diverge. Look at those turns — the filter
-> overshoots every one because it's predicting straight
-> lines in a curved world.
+
+> [NARRATOR, rate=-15%] It can diverge. Look at those
+> turns — the filter overshoots every one because it's
+> predicting straight lines in a curved world.
 
 PAUSE: medium
 
@@ -79,11 +82,11 @@ SHOW: taxonomy diagram (left to right flow):
   below: TF ($COLOR_FILTER_TF) -> Multi-Agent ($COLOR_FILTER_IMM) -> World Models ($COLOR_SSM) -> Dynamics ($COLOR_PROCESS_NOISE)
   Each box: short label only
 
-> [NARRATOR] Each limitation has a solution. The Extended
-> Kalman Filter linearizes on the fly. The Unscented version
-> avoids linearization entirely. Particle filters drop the
-> Gaussian assumption. And then there's what happens when
-> you throw deep learning at the problem.
+> [NARRATOR, style=hopeful] Each limitation has a solution.
+> The Extended Kalman Filter linearizes on the fly. The
+> Unscented version avoids linearization entirely. Particle
+> filters drop the Gaussian assumption. And then there's
+> what happens when you throw deep learning at the problem.
 
 > [NARRATOR] Each solution has its own trade-offs. That's
 > the rest of this series.
@@ -93,16 +96,16 @@ PAUSE: medium
 = BEAT 5: The sign-off =
 
 FADEOUT: taxonomy
-TEXT: "Part 2: The Extended Kalman Filter" (center, $COLOR_HIGHLIGHT)
+TEXT: "Next: Extended Kalman Filter" (center, $COLOR_HIGHLIGHT)
 TEXT: "Rest of playlist uploading soon" (below, small, $COLOR_TEXT)
 
-> [SKEPTIC] When does the rest drop?
+> [SKEPTIC, style=cheerful] When does the rest drop?
 
 > [NARRATOR] Soon.
 
-> [SKEPTIC] You said that last time.
+> [SKEPTIC, rate=-10%] You said that last time.
 
-> [NARRATOR] And I delivered. Stay tuned.
+> [NARRATOR, style=hopeful] And I delivered. Stay tuned.
 
 PAUSE: long
 

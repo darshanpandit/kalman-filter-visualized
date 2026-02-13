@@ -19,5 +19,8 @@ Thumbs.db
 .idea/
 *.swp
 
+# Secrets
+.env
+
 # Claude Code local settings
 .claude/
