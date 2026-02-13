@@ -1,65 +1,81 @@
 """Scene 03: Walking the Dog — Frechet distance via the dog-walking metaphor.
 
+Two-voice format (Jenny = narrator, Tony = Darshan) using Azure TTS.
 The mathematical heart of the conflation chapter. Explains Frechet distance
 using the classic dog-walking analogy, then contrasts with Hausdorff distance.
+
+Voices: narrator (chat), narrator rate=-10%, narrator_whisper, darshan (friendly)
+
+Requires: pip install "manim-voiceover[azure]"
+          Set AZURE_SUBSCRIPTION_KEY and AZURE_SERVICE_REGION in .env
 """
 
 from __future__ import annotations
 
 from manim import *
 from manim_voiceover import VoiceoverScene
-from manim_voiceover.services.gtts import GTTSService
+from manim_voiceover.services.azure import AzureService
 import numpy as np
 import sys, os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from kalman_manim.style import *
-from pandit2019_conflation.data import *
+from pandit2019_conflation.data import DISTANCE_COMPARISON, fig_path
 
 
 class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
+    """Beat 3 — Walking the Dog (Frechet distance)."""
+
     def construct(self):
-        self.set_speech_service(GTTSService())
+        # ── Voice setup ─────────────────────────────────────────────
+        narrator = AzureService(voice="en-US-JennyNeural", style="chat")
+        narrator_whisper = AzureService(
+            voice="en-US-JennyNeural", style="whispering",
+        )
+        darshan = AzureService(voice="en-US-TonyNeural", style="friendly")
+        self.set_speech_service(narrator)
         self.camera.background_color = BG_COLOR
 
-        # ── Title ─────────────────────────────────────────────────────
+        # ── Title ───────────────────────────────────────────────────
         title = Text(
             "Walking the Dog", color=COLOR_TEXT, font_size=TITLE_FONT_SIZE,
         )
         title.to_edge(UP, buff=0.3).set_z_index(10)
 
         with self.voiceover(
-            text="To match road segments between two datasets, we need a way "
-                 "to measure how similar two curves are. "
-                 "Let me show you the most elegant idea in computational geometry."
+            text=(
+                "To match road segments, we need to measure how similar "
+                "two curves are. And there's a beautiful idea from "
+                "computational geometry that does exactly this."
+            ),
         ) as tracker:
             self.play(FadeIn(title, shift=DOWN * 0.3), run_time=NORMAL_ANIM)
             self.wait(PAUSE_MEDIUM)
 
-        # ── Build two curvy paths ─────────────────────────────────────
+        # ── Build two curvy paths ───────────────────────────────────
         # Person path (red) — upper curve
         person_anchors = [
             np.array([-5.0, 0.8, 0]),
-            np.array([-3.0, 1.8, 0]),
-            np.array([-0.5, 0.3, 0]),
-            np.array([1.5, 1.5, 0]),
+            np.array([-3.0, 1.6, 0]),
+            np.array([-0.5, 0.2, 0]),
+            np.array([1.5, 1.4, 0]),
             np.array([3.5, 0.5, 0]),
-            np.array([5.0, 1.2, 0]),
+            np.array([5.0, 1.1, 0]),
         ]
         person_path = VMobject()
         person_path.set_points_smoothly(person_anchors)
         person_path.set_color(COLOR_PREDICTION)
         person_path.set_stroke(width=4)
 
-        # Dog path (blue) — lower curve
+        # Dog path (blue) — lower curve, offset and differently shaped
         dog_anchors = [
-            np.array([-5.0, -0.8, 0]),
-            np.array([-2.5, -1.6, 0]),
-            np.array([-0.5, -0.5, 0]),
-            np.array([1.0, -1.8, 0]),
-            np.array([3.0, -0.6, 0]),
-            np.array([5.0, -1.0, 0]),
+            np.array([-5.0, -0.9, 0]),
+            np.array([-2.5, -1.7, 0]),
+            np.array([-0.5, -0.6, 0]),
+            np.array([1.0, -1.9, 0]),
+            np.array([3.0, -0.7, 0]),
+            np.array([5.0, -1.1, 0]),
         ]
         dog_path = VMobject()
         dog_path.set_points_smoothly(dog_anchors)
@@ -77,9 +93,10 @@ class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
         lbl_dog.next_to(dog_path.point_from_proportion(0.05), DOWN, buff=0.15)
 
         with self.voiceover(
-            text="Imagine two curved roads. A person walks along one, "
-                 "and their dog walks along the other. "
-                 "They are connected by a leash."
+            text=(
+                "Imagine a person walking along one road, and their dog "
+                "walking along another. They're connected by a leash."
+            ),
         ) as tracker:
             self.play(
                 Create(person_path), Create(dog_path),
@@ -92,14 +109,18 @@ class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
             )
             self.wait(PAUSE_SHORT)
 
-        # ── Dog-walking animation ─────────────────────────────────────
+        # ── Person and dog dots + leash ─────────────────────────────
         person_dot = Dot(radius=0.12, color=CREAM).set_z_index(5)
         dog_dot = Dot(radius=0.10, color=COLOR_HIGHLIGHT).set_z_index(5)
         person_dot.move_to(person_path.point_from_proportion(0))
         dog_dot.move_to(dog_path.point_from_proportion(0))
 
-        person_lbl = Text("Person", color=CREAM, font_size=CHART_LABEL_FONT_SIZE)
-        dog_lbl = Text("Dog", color=COLOR_HIGHLIGHT, font_size=CHART_LABEL_FONT_SIZE)
+        person_lbl = Text(
+            "Person", color=CREAM, font_size=CHART_LABEL_FONT_SIZE,
+        )
+        dog_lbl = Text(
+            "Dog", color=COLOR_HIGHLIGHT, font_size=CHART_LABEL_FONT_SIZE,
+        )
         person_lbl.next_to(person_dot, UP, buff=0.12)
         dog_lbl.next_to(dog_dot, DOWN, buff=0.12)
 
@@ -111,14 +132,23 @@ class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
             )
         )
 
-        # Leash length display
+        # ── Leash length readouts ───────────────────────────────────
         leash_label = always_redraw(
             lambda: Text(
                 f"Leash: {np.linalg.norm(person_dot.get_center() - dog_dot.get_center()):.2f}",
                 color=CREAM, font_size=CHART_LABEL_FONT_SIZE,
             ).move_to(
-                (person_dot.get_center() + dog_dot.get_center()) / 2 + RIGHT * 1.2
+                (person_dot.get_center() + dog_dot.get_center()) / 2
+                + RIGHT * 1.4
             )
+        )
+
+        max_leash = ValueTracker(0)
+        max_leash_label = always_redraw(
+            lambda: Text(
+                f"Max leash: {max_leash.get_value():.2f}",
+                color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE,
+            ).to_edge(DOWN, buff=0.5)
         )
 
         self.play(
@@ -126,26 +156,28 @@ class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
             FadeIn(person_lbl), FadeIn(dog_lbl),
             run_time=FAST_ANIM,
         )
-        self.add(leash, leash_label)
+        self.add(leash, leash_label, max_leash_label)
 
-        # Track maximum leash during walk
-        max_leash = ValueTracker(0)
+        # ── The key rule (narrator, slowed prosody) ─────────────────
+        self.set_speech_service(narrator)
+        with self.voiceover(
+            text=(
+                "Here is the rule. Neither the person nor the dog can go "
+                "backwards. They can speed up, slow down, even stop and "
+                "wait. But they must always move forward."
+            ),
+            prosody={"rate": "-10%"},
+        ) as tracker:
+            self.wait(PAUSE_MEDIUM)
 
-        max_leash_label = always_redraw(
-            lambda: Text(
-                f"Max leash: {max_leash.get_value():.2f}",
-                color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE,
-            ).to_edge(DOWN, buff=0.5)
-        )
-        self.add(max_leash_label)
-
-        # Animate the walk using ValueTracker for synchronised motion
+        # ── Dog-walking animation ───────────────────────────────────
+        # ValueTracker for synchronized forward walk
         progress = ValueTracker(0)
 
-        # Dog walks slightly non-uniformly to show independence
+        # Dog walks with slightly different pacing to show independence
         def dog_alpha(t):
-            """Dog advances a bit faster in the middle, slower at ends."""
-            return t  # keep synchronised for clarity
+            """Dog advances faster in the middle, slower at ends."""
+            return np.clip(t ** 0.9, 0, 1)
 
         person_dot.add_updater(
             lambda m: m.move_to(person_path.point_from_proportion(
@@ -160,7 +192,7 @@ class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
         person_lbl.add_updater(lambda m: m.next_to(person_dot, UP, buff=0.12))
         dog_lbl.add_updater(lambda m: m.next_to(dog_dot, DOWN, buff=0.12))
 
-        # Custom updater to track max leash
+        # Track maximum leash during walk
         def update_max(m):
             dist = np.linalg.norm(
                 person_dot.get_center() - dog_dot.get_center()
@@ -170,11 +202,11 @@ class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
         person_dot.add_updater(update_max)
 
         with self.voiceover(
-            text="The key rule: neither person nor dog can go backwards. "
-                 "They can speed up, slow down, even stop and wait, "
-                 "but they must always move forward along their path. "
-                 "The Frechet distance is the shortest possible longest leash "
-                 "needed across all possible walks."
+            text=(
+                "The Frechet distance is the shortest possible longest "
+                "leash needed to complete the walk."
+            ),
+            prosody={"rate": "-10%"},
         ) as tracker:
             self.play(
                 progress.animate.set_value(1),
@@ -189,113 +221,168 @@ class SceneWalkingTheDog(VoiceoverScene, MovingCameraScene):
         person_lbl.clear_updaters()
         dog_lbl.clear_updaters()
 
-        # Flash the max leash value
-        with self.voiceover(
-            text="That maximum leash length, minimized over all valid walks, "
-                 "is the Frechet distance between these two curves."
-        ) as tracker:
-            self.play(
-                max_leash_label.animate.set_color(COLOR_HIGHLIGHT).scale(1.15),
-                run_time=NORMAL_ANIM,
-            )
-            self.wait(PAUSE_MEDIUM)
-
-        # ── Transition: clear walking animation, show paper figure ────
-        walk_group = VGroup(
-            person_dot, dog_dot, person_lbl, dog_lbl,
-            lbl_person, lbl_dog,
-        )
+        # ── Flash max leash ─────────────────────────────────────────
+        # Remove always_redraw objects, replace with static
         self.remove(leash, leash_label, max_leash_label)
+        final_max = max_leash.get_value()
+        max_leash_static = Text(
+            f"Max leash: {final_max:.2f}",
+            color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE,
+        ).to_edge(DOWN, buff=0.5)
+        self.add(max_leash_static)
+
         self.play(
-            FadeOut(walk_group),
-            FadeOut(max_leash_label),
-            person_path.animate.set_stroke(opacity=0.3),
-            dog_path.animate.set_stroke(opacity=0.3),
+            max_leash_static.animate.scale(1.15),
+            Flash(max_leash_static, color=COLOR_HIGHLIGHT, flash_radius=0.6),
             run_time=NORMAL_ANIM,
         )
 
-        # ── Figure 4: Frechet vs Hausdorff from paper ─────────────────
+        # ── Darshan: worst-case best-case ───────────────────────────
+        self.set_speech_service(darshan)
+        with self.voiceover(
+            text=(
+                "The worst-case best-case distance. You optimize the walk "
+                "to minimize the maximum leash. And that no-backtracking "
+                "rule is what makes it perfect for roads. Roads have "
+                "direction."
+            ),
+        ) as tracker:
+            self.wait(PAUSE_MEDIUM)
+
+        # ── Narrator whisper: foreshadowing ─────────────────────────
+        self.set_speech_service(narrator_whisper)
+        with self.voiceover(
+            text=(
+                "Remember this structure. Optimizing over all valid "
+                "couplings to minimize cost. We'll see it again."
+            ),
+        ) as tracker:
+            self.wait(PAUSE_MEDIUM)
+
+        # ── Transition: clear walk, fade paths, show paper figure ───
+        walk_group = VGroup(
+            person_dot, dog_dot, person_lbl, dog_lbl,
+            lbl_person, lbl_dog, max_leash_static,
+        )
+        self.play(
+            FadeOut(walk_group),
+            person_path.animate.set_stroke(opacity=0.2),
+            dog_path.animate.set_stroke(opacity=0.2),
+            run_time=NORMAL_ANIM,
+        )
+        self.play(
+            FadeOut(person_path), FadeOut(dog_path),
+            run_time=FAST_ANIM,
+        )
+
+        # ── Figure 4: Frechet vs Hausdorff from paper ───────────────
         fig = ImageMobject(fig_path("fig4_frechet_hausdorff.png"))
         fig.scale_to_fit_width(8).move_to(ORIGIN + DOWN * 0.3)
 
+        self.set_speech_service(narrator)
         with self.voiceover(
-            text="Here is how the paper visualizes this. "
-                 "Hausdorff distance allows backtracking. It simply asks: "
-                 "what is the farthest any point on one curve is from "
-                 "the closest point on the other? "
-                 "But Frechet is stricter. You must walk forward."
+            text=(
+                "Now compare that to Hausdorff distance. Hausdorff allows "
+                "backtracking. It treats curves as point sets, ignoring "
+                "order. A weaker measure."
+            ),
         ) as tracker:
-            self.play(
-                FadeOut(person_path), FadeOut(dog_path),
-                FadeIn(fig),
-                run_time=NORMAL_ANIM,
-            )
+            self.play(FadeIn(fig), run_time=NORMAL_ANIM)
             self.wait(PAUSE_LONG)
 
-        # ── Comparison cards: Frechet vs Hausdorff ────────────────────
+        # ── Comparison cards: Frechet vs Hausdorff ──────────────────
         self.play(FadeOut(fig), run_time=FAST_ANIM)
 
-        dc = DISTANCE_COMPARISON
+        # --- Frechet card (left, TEAL) ---
+        frechet_bg = RoundedRectangle(
+            width=4.8, height=3.4, corner_radius=0.2,
+            fill_color=DARK_SLATE, fill_opacity=0.85,
+            stroke_color=TEAL, stroke_width=2,
+        ).shift(LEFT * 2.9 + DOWN * 0.3)
 
-        def make_card(key, card_color, pos):
-            info = dc[key]
-            bg = RoundedRectangle(
-                width=4.5, height=3.2, corner_radius=0.2,
-                fill_color=DARK_SLATE, fill_opacity=0.85,
-                stroke_color=card_color, stroke_width=2,
-            ).move_to(pos)
-            name = Text(
-                info["name"], color=card_color, font_size=HEADING_FONT_SIZE,
-            ).move_to(bg.get_top() + DOWN * 0.45)
-            prop = Text(
-                info["property"], color=COLOR_TEXT, font_size=BODY_FONT_SIZE,
-            ).next_to(name, DOWN, buff=0.3)
-            strength = Text(
-                info["strength"], color=COLOR_TEXT, font_size=SMALL_FONT_SIZE,
-            ).next_to(prop, DOWN, buff=0.25)
-            weight_val = 3 if key == "frechet" else 2
-            weight = Text(
-                f"Weight = {weight_val}",
-                color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE,
-            ).next_to(strength, DOWN, buff=0.25)
-            return VGroup(bg, name, prop, strength, weight)
+        frechet_items = VGroup(
+            Text("Frechet Distance", color=TEAL, font_size=HEADING_FONT_SIZE),
+            Text("No backtracking", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
+            Text("Order-aware", color=COLOR_TEXT, font_size=SMALL_FONT_SIZE),
+            Text("Weight = 3", color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE),
+        )
+        frechet_items.arrange(DOWN, buff=0.25)
+        frechet_items.move_to(frechet_bg)
+        frechet_card = VGroup(frechet_bg, frechet_items)
 
-        frechet_card = make_card("frechet", TEAL, LEFT * 2.8)
-        hausdorff_card = make_card("hausdorff", SLATE, RIGHT * 2.8)
+        # --- Hausdorff card (right, SLATE) ---
+        hausdorff_bg = RoundedRectangle(
+            width=4.8, height=3.4, corner_radius=0.2,
+            fill_color=DARK_SLATE, fill_opacity=0.85,
+            stroke_color=SLATE, stroke_width=2,
+        ).shift(RIGHT * 2.9 + DOWN * 0.3)
 
+        hausdorff_items = VGroup(
+            Text("Hausdorff Distance", color=SLATE, font_size=HEADING_FONT_SIZE),
+            Text("Backtracking OK", color=COLOR_TEXT, font_size=BODY_FONT_SIZE),
+            Text("Set-based", color=COLOR_TEXT, font_size=SMALL_FONT_SIZE),
+            Text("Weight = 2", color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE),
+        )
+        hausdorff_items.arrange(DOWN, buff=0.25)
+        hausdorff_items.move_to(hausdorff_bg)
+        hausdorff_card = VGroup(hausdorff_bg, hausdorff_items)
+
+        self.set_speech_service(darshan)
         with self.voiceover(
-            text="Frechet respects the direction of travel, "
-                 "which is critical for roads that are one-way or have a clear flow. "
-                 "That is why the authors gave Frechet a weight of 3, "
-                 "versus only 2 for Hausdorff."
+            text=(
+                "I use both in my algorithm. Frechet is stronger, so it "
+                "gets weight three. Hausdorff gets two."
+            ),
         ) as tracker:
             self.play(
                 FadeIn(frechet_card, shift=UP * 0.3),
                 FadeIn(hausdorff_card, shift=UP * 0.3),
                 run_time=NORMAL_ANIM,
             )
-            self.wait(PAUSE_LONG)
+            self.wait(PAUSE_MEDIUM)
 
-        # Highlight Frechet card
+        # ── Narrator: why not Frechet alone? ────────────────────────
+        self.set_speech_service(narrator)
         with self.voiceover(
-            text="But wait, why not just use Frechet alone? "
-                 "Because Hausdorff catches cases where two curves are close "
-                 "everywhere but walk in opposite directions. "
-                 "Together, they are complementary."
+            text="Why not Frechet alone?",
         ) as tracker:
             self.play(
-                frechet_card[0].animate.set_stroke(color=COLOR_HIGHLIGHT, width=3),
+                frechet_bg.animate.set_stroke(color=COLOR_HIGHLIGHT, width=3),
                 run_time=FAST_ANIM,
             )
-            self.wait(PAUSE_LONG)
+            self.wait(PAUSE_SHORT)
+
+        # ── Darshan: complementary measures ─────────────────────────
+        self.set_speech_service(darshan)
+        with self.voiceover(
+            text=(
+                "Because Hausdorff catches cases where two curves are close "
+                "everywhere but the endpoints are swapped. HPMS segments "
+                "don't encode direction consistently — one line for both "
+                "carriageways. So I compute the Frechet distance twice, "
+                "forwards and reversed, and take the minimum. Hausdorff "
+                "handles that naturally."
+            ),
+        ) as tracker:
             self.play(
-                frechet_card[0].animate.set_stroke(color=TEAL, width=2),
-                hausdorff_card[0].animate.set_stroke(color=COLOR_HIGHLIGHT, width=3),
+                frechet_bg.animate.set_stroke(color=TEAL, width=2),
+                hausdorff_bg.animate.set_stroke(color=COLOR_HIGHLIGHT, width=3),
                 run_time=FAST_ANIM,
             )
             self.wait(PAUSE_MEDIUM)
+            self.play(
+                hausdorff_bg.animate.set_stroke(color=SLATE, width=2),
+                run_time=FAST_ANIM,
+            )
 
-        # ── Fade out ──────────────────────────────────────────────────
+        # ── Fade out ────────────────────────────────────────────────
+        self.wait(PAUSE_MEDIUM)
+        self.play(
+            *[FadeOut(mob) for mob in self.mobjects if mob is not title],
+            run_time=NORMAL_ANIM,
+        )
+        self.wait(PAUSE_MEDIUM)
+
         self.play(
             *[FadeOut(mob) for mob in self.mobjects],
             run_time=NORMAL_ANIM,

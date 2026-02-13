@@ -1,14 +1,20 @@
-"""Scene 5: The Results — Gumbel distributions, coverage gaps, discrepancy maps.
+"""Scene 05: The Results — Gumbel distributions, coverage gaps, discrepancy maps.
 
-Shows the algorithm's output: Gumbel score distributions (extreme-value behavior),
-excess/missing coverage maps, and key quantitative findings (5.11% excess, 3.10% missing).
+Azure multi-voice scene. Darshan presents the algorithm's output: bidirectional
+matching, Gumbel score distributions, excess/missing coverage maps, and the
+key quantitative findings (5.11% excess, 3.10% missing). Jenny provides
+newscast-style statistical commentary.
+
+Voices: narrator (Jenny, chat), narrator_newscast (Jenny, newscast),
+        darshan (Tony, friendly), darshan slow (Tony, friendly, rate=-10%).
 """
 
 from __future__ import annotations
 
 from manim import *
 from manim_voiceover import VoiceoverScene
-from manim_voiceover.services.gtts import GTTSService
+from manim_voiceover.services.azure import AzureService
+import numpy as np
 import sys, os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -19,10 +25,14 @@ from pandit2019_conflation.data import RESULTS, fig_path
 
 class SceneTheResults(VoiceoverScene, MovingCameraScene):
     def construct(self):
-        self.set_speech_service(GTTSService())
+        # ── Voice services ─────────────────────────────────────────
+        narrator = AzureService(voice="en-US-JennyNeural", style="chat")
+        narrator_newscast = AzureService(voice="en-US-JennyNeural", style="newscast")
+        darshan = AzureService(voice="en-US-TonyNeural", style="friendly")
+        self.set_speech_service(darshan)
         self.camera.background_color = BG_COLOR
 
-        # ── Beat 1: Title ────────────────────────────────────────────
+        # ── Title ──────────────────────────────────────────────────
         title = Text(
             "The Results", color=COLOR_TEXT, font_size=TITLE_FONT_SIZE,
         )
@@ -30,134 +40,168 @@ class SceneTheResults(VoiceoverScene, MovingCameraScene):
 
         with self.voiceover(
             text=(
-                "We ran the algorithm in both directions: "
-                "NPMRDS to HPMS, and HPMS to NPMRDS. "
-                "Let's look at what the scores tell us."
+                "We ran the algorithm in both directions. NPMRDS to HPMS, "
+                "and HPMS to NPMRDS. You need both — one direction finds "
+                "excess segments, the other finds missing ones."
             )
         ) as tracker:
             self.play(FadeIn(title, shift=DOWN * 0.3), run_time=NORMAL_ANIM)
-            self.wait(PAUSE_LONG)
+            self.wait(PAUSE_MEDIUM)
 
-        # ── Beat 2: Gumbel distributions ─────────────────────────────
+        # ── Figure 6: Gumbel distributions ─────────────────────────
         fig_gumbel = ImageMobject(fig_path("fig6_gumbel_distributions.png"))
-        fig_gumbel.scale_to_fit_width(9.5)
+        fig_gumbel.scale_to_fit_width(10)
         fig_gumbel.next_to(title, DOWN, buff=0.4)
 
-        gumbel_caption = Text(
-            "Gumbel (Extreme Value Type I) distribution of matching scores",
-            color=SLATE, font_size=SMALL_FONT_SIZE,
-        )
-        gumbel_caption.next_to(fig_gumbel, DOWN, buff=0.2)
+        self.set_speech_service(narrator_newscast)
 
         with self.voiceover(
             text=(
-                "The matching scores follow a Gumbel distribution, also known as "
-                "Extreme Value Type I. Why Gumbel? Because for each source segment, "
-                "we pick the minimum score among all candidates within the buffer. "
-                "Taking the minimum of many values is an extreme value operation, "
-                "and the Gumbel distribution is exactly what governs that behavior. "
-                "Notice the long right tail. Most matches are good, with low scores "
-                "near the mode. But a few are terrible, way out in the tail. "
-                "Those outliers are the discrepancies we are looking for."
+                "The final scores follow a Gumbel distribution — Extreme "
+                "Value Type one. That's expected. You're taking the minimum "
+                "among candidates, which is an extreme value operation. "
+                "The long right tail is where the mismatches live."
             )
         ) as tracker:
             self.play(FadeIn(fig_gumbel, shift=UP * 0.3), run_time=NORMAL_ANIM)
-            self.wait(PAUSE_SHORT)
-            self.play(FadeIn(gumbel_caption), run_time=FAST_ANIM)
-            self.wait(PAUSE_LONG * 2)
+            self.wait(PAUSE_LONG)
 
-        self.play(
-            FadeOut(fig_gumbel), FadeOut(gumbel_caption), run_time=FAST_ANIM,
-        )
-
-        # ── Beat 3: Excess and missing maps ──────────────────────────
-        fig_maps = ImageMobject(fig_path("fig5_excess_missing_maps.png"))
-        fig_maps.scale_to_fit_width(10.0)
-        fig_maps.next_to(title, DOWN, buff=0.4)
-
-        maps_caption = Text(
-            "Yellow = NHS roads    Black = NPMRDS coverage",
-            color=SLATE, font_size=SMALL_FONT_SIZE,
-        )
-        maps_caption.next_to(fig_maps, DOWN, buff=0.2)
+        # ── Darshan on cutoff ──────────────────────────────────────
+        self.set_speech_service(darshan)
 
         with self.voiceover(
             text=(
-                "Here is the coverage picture. The yellow lines are the National "
-                "Highway System roads. The black lines are NPMRDS segments overlaid "
-                "on top. Where they don't align, we have a problem. "
-                "Some regions have thick NPMRDS coverage but the NHS geometry "
-                "curves away. Other stretches of highway simply have no NPMRDS "
-                "data at all. These are the gaps that the algorithm must find."
+                "The practical question is: where do you draw the cutoff? "
+                "We discarded the top half-percent as unreliable matches."
+            )
+        ) as tracker:
+            self.wait(PAUSE_MEDIUM)
+
+        # ── Fade out Gumbel figure ─────────────────────────────────
+        self.play(FadeOut(fig_gumbel), run_time=FAST_ANIM)
+
+        # ── Figure 5: Excess and missing maps ──────────────────────
+        fig_maps = ImageMobject(fig_path("fig5_excess_missing_maps.png"))
+        fig_maps.scale_to_fit_width(10)
+        fig_maps.next_to(title, DOWN, buff=0.4)
+
+        with self.voiceover(
+            text=(
+                "Here's what the data looks like on a map. Yellow lines "
+                "are NHS roads from HPMS. Black lines are NPMRDS. Where "
+                "they don't overlap, something is wrong."
             )
         ) as tracker:
             self.play(FadeIn(fig_maps, shift=UP * 0.3), run_time=NORMAL_ANIM)
-            self.wait(PAUSE_SHORT)
-            self.play(FadeIn(maps_caption), run_time=FAST_ANIM)
-            self.wait(PAUSE_LONG * 2)
+            self.wait(PAUSE_LONG)
 
-        self.play(
-            FadeOut(fig_maps), FadeOut(maps_caption), run_time=FAST_ANIM,
+        # ── Fade out maps figure ───────────────────────────────────
+        self.play(FadeOut(fig_maps), run_time=FAST_ANIM)
+
+        # ── Figure 7: Combined results map with stat overlay ───────
+        fig_results = ImageMobject(fig_path("fig7_combined.png"))
+        fig_results.scale_to_fit_width(10)
+        fig_results.next_to(title, DOWN, buff=0.4)
+
+        # ── Stat overlay cards at the bottom ───────────────────────
+        stat_box = RoundedRectangle(
+            width=9.0, height=1.5, corner_radius=0.12,
+            stroke_color=SLATE, stroke_width=1.5,
+            fill_color=BG_COLOR, fill_opacity=0.92,
+        )
+        stat_box.to_edge(DOWN, buff=0.3)
+
+        # ValueTrackers for count-up animation
+        excess_tracker = ValueTracker(0)
+        missing_tracker = ValueTracker(0)
+
+        excess_target = RESULTS["excess_tmc_pct"]   # 5.11
+        missing_target = RESULTS["missing_npmrds_pct"]  # 3.10
+
+        # Excess label (left side of stat box)
+        excess_prefix = Text(
+            "Excess: ", color=COLOR_PREDICTION, font_size=BODY_FONT_SIZE,
+        )
+        excess_number = always_redraw(
+            lambda: Text(
+                f"{excess_tracker.get_value():.2f}%",
+                color=COLOR_PREDICTION, font_size=BODY_FONT_SIZE,
+            ).next_to(excess_prefix, RIGHT, buff=0.1)
         )
 
-        # ── Beat 4: Algorithm results map ────────────────────────────
-        fig_results = ImageMobject(fig_path("fig7_combined.png"))
-        fig_results.scale_to_fit_width(10.5)
-        fig_results.next_to(title, DOWN, buff=0.35)
+        # Missing label (right side of stat box)
+        missing_prefix = Text(
+            "Missing: ", color=TEAL, font_size=BODY_FONT_SIZE,
+        )
+        missing_number = always_redraw(
+            lambda: Text(
+                f"{missing_tracker.get_value():.2f}%",
+                color=TEAL, font_size=BODY_FONT_SIZE,
+            ).next_to(missing_prefix, RIGHT, buff=0.1)
+        )
+
+        # Position the stat groups within the box
+        excess_group = VGroup(excess_prefix, excess_number)
+        missing_group = VGroup(missing_prefix, missing_number)
+
+        excess_prefix.move_to(
+            stat_box.get_center() + LEFT * 2.5
+        )
+        missing_prefix.move_to(
+            stat_box.get_center() + RIGHT * 1.5
+        )
 
         with self.voiceover(
             text=(
-                "And here is what the algorithm found. "
-                "Red segments are excess: TMC segments in NPMRDS that have no "
-                "matching NHS road in HPMS. "
-                "Purple segments are missing: NHS roads that have no NPMRDS "
-                "coverage at all. "
-                "The numbers: five point one one percent excess, "
-                "three point one zero percent missing."
+                "Red segments are excess TMC — roads in the travel time "
+                "dataset that shouldn't be there. Purple segments are "
+                "missing — NHS roads with no travel time coverage at all. "
+                "In Delaware, Maryland and DC alone."
             )
         ) as tracker:
             self.play(FadeIn(fig_results, shift=UP * 0.3), run_time=NORMAL_ANIM)
-            self.wait(PAUSE_LONG * 2)
+            self.wait(PAUSE_SHORT)
+            self.play(
+                FadeIn(stat_box),
+                FadeIn(excess_prefix), FadeIn(excess_number),
+                FadeIn(missing_prefix), FadeIn(missing_number),
+                run_time=FAST_ANIM,
+            )
+            # Count-up animation
+            self.play(
+                excess_tracker.animate.set_value(excess_target),
+                missing_tracker.animate.set_value(missing_target),
+                run_time=SLOW_ANIM,
+                rate_func=smooth,
+            )
+            self.wait(PAUSE_MEDIUM)
 
-        # Key numbers overlay
-        excess_pct = f"{RESULTS['excess_tmc_pct']}%"
-        missing_pct = f"{RESULTS['missing_npmrds_pct']}%"
+        # ── Narrator reacts ────────────────────────────────────────
+        self.set_speech_service(narrator)
 
-        stat_box = RoundedRectangle(
-            width=8.5, height=1.4, corner_radius=0.12,
-            stroke_color=SLATE, stroke_width=1.5,
-            fill_color=BG_COLOR, fill_opacity=0.9,
-        )
-        stat_box.to_edge(DOWN, buff=0.35)
+        with self.voiceover(
+            text="Five percent excess. Three percent missing."
+        ) as tracker:
+            self.wait(PAUSE_MEDIUM)
 
-        excess_text = Text(
-            f"Excess (red):  {excess_pct}",
-            color=COLOR_PREDICTION, font_size=BODY_FONT_SIZE,
-        )
-        missing_text = Text(
-            f"Missing (purple):  {missing_pct}",
-            color="#9b59b6", font_size=BODY_FONT_SIZE,
-        )
-        stats = VGroup(excess_text, missing_text).arrange(RIGHT, buff=1.5)
-        stats.move_to(stat_box)
+        # ── Darshan slow closing ───────────────────────────────────
+        self.set_speech_service(darshan)
 
         with self.voiceover(
             text=(
-                "These numbers matter for a practical reason. "
-                "MAP-21 requires every state to report travel time reliability "
-                "on the National Highway System. If your underlying map is wrong, "
-                "if segments are excess or missing, then your congestion metrics "
-                "are wrong too. Getting the map right is not optional. "
-                "It is a federal requirement."
-            )
+                "If your map is wrong, your congestion numbers are wrong. "
+                "Your greenhouse gas estimates are wrong. The funding "
+                "allocations based on those numbers — wrong. This is "
+                "what we found when we looked at just three states."
+            ),
+            prosody={"rate": "-10%"},
         ) as tracker:
-            self.play(
-                FadeIn(stat_box), FadeIn(stats), run_time=NORMAL_ANIM,
-            )
-            self.wait(PAUSE_LONG * 2)
+            self.wait(PAUSE_LONG)
 
-        # ── Fade out ─────────────────────────────────────────────────
+        # ── Fade out ───────────────────────────────────────────────
         self.play(
-            *[FadeOut(mob) for mob in self.mobjects],
+            *[FadeOut(mob) for mob in self.mobjects if mob is not title],
             run_time=NORMAL_ANIM,
         )
+        self.wait(PAUSE_LONG)
+        self.play(FadeOut(title), run_time=FAST_ANIM)

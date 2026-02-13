@@ -1,0 +1,531 @@
+PART: Geospatial Conflation
+SCENE 01: The Map Under the Map — "Before you can track anything, the road itself must be correct."
+
+VOICES:
+  NARRATOR: Azure en-US-JennyNeural, style=chat
+  DARSHAN: Azure en-US-TonyNeural, style=friendly
+
+REFERENCES:
+  - Pandit, Kaushik & Cirillo (2019) — Coupling NPMRDS and HPMS Datasets on a Geospatial Level. TRR 2673(4), 583-592.
+  - Kim et al. (2022) — APSG: topology-aware map conflation
+  - Eiter & Mannila (1994) — Computing Discrete Frechet Distance
+  - Bewley et al. (2016) — SORT: Simple Online Realtime Tracking
+
+DATA:
+  figures: data/pandit2019_figures/
+  fig1: fig1_segment_histograms_fullwidth.png (segment length histograms)
+  fig2: fig2_aadt_distributions.png (AADT exponential bins)
+  fig3: fig3_buffer_search.png (I-95/I-495 buffer search)
+  fig4: fig4_frechet_hausdorff.png (distance illustrations)
+  fig5: fig5_excess_missing_maps.png (coverage gaps)
+  fig6: fig6_gumbel_distributions.png (score distributions)
+  fig7: fig7_combined.png (algorithm results maps)
+  scoring_weights: {Angle: 3, Frechet: 3, Hausdorff: 2, Road Number: 4, Road Name: 1}
+  results: {excess_tmc: 5.11%, missing_hpms: 3.10%}
+
+= BEAT 1: The Map Problem =
+
+TITLE: "The Map Under the Map" (top)
+
+> [NARRATOR] Two maps. Same highway. Different shapes.
+
+PAUSE: medium
+
+> [DARSHAN] This is my problem. The first paper in my
+> dissertation. I worked on this at the University of
+> Maryland with Kartik Kaushik and my advisor
+> Cinzia Cirillo.
+
+SHOW: two RoundedRectangle panels side-by-side
+  LEFT ($COLOR_MEASUREMENT): "NPMRDS" header, bullets: "Probe-based travel times", "TMC segments", "5-minute GPS epochs"
+  RIGHT ($COLOR_HIGHLIGHT): "HPMS" header, bullets: "Road attributes", "AADT, lanes, class", "Federal inventory"
+
+> [DARSHAN] The United States government maintains two
+> national road datasets. The NPMRDS gives you travel
+> times from GPS probes — how long it takes to cross
+> each road segment. The HPMS gives you everything
+> else — traffic volume, lanes, road classification.
+
+> [NARRATOR] And the federal government needs both
+> fused together. The MAP-21 Act requires it.
+
+> [DARSHAN] Right. Congress mandated performance
+> reporting on every NHS road. But the segments in
+> these two datasets don't line up. The geometries
+> disagree about where the road actually is.
+
+TEXT: "5.11% excess" (center-left, $COLOR_PREDICTION)
+TEXT: "3.10% missing" (center-right, $TEAL)
+
+> [NARRATOR, style=newscast] Five point one one percent
+> of TMC segments have no matching NHS road. Three point
+> one zero percent of NHS roads have no NPMRDS coverage.
+
+> [DARSHAN] We studied Delaware, Maryland and DC.
+> Those numbers are just three states. But the MAP-21
+> reporting covers the entire national highway system.
+> If this is what three states look like, think about
+> what's happening everywhere else.
+
+PAUSE: medium
+
+FADEOUT: panels, stats
+
+> [NARRATOR] So the question becomes: how do you match
+> segments across maps that were never designed to agree?
+
+TEXT: "How do you match maps\nthat were never designed to agree?" (center, $COLOR_HIGHLIGHT)
+
+PAUSE: long
+
+FADEOUT: all except title
+
+= BEAT 2: The Data =
+
+TITLE: "The Data" (top, replace previous)
+
+> [DARSHAN] Let me show you what I was dealing with.
+> The NPMRDS is built from GPS probes. Every five
+> minutes, if a vehicle crosses a TMC segment, you
+> get a travel time. No vehicle, no data.
+
+SHOW: ImageMobject fig1_segment_histograms_fullwidth.png, width=10, centered below title
+SHOW: SurroundingRectangle border for readability
+
+> [DARSHAN] Look at these segment lengths. HPMS
+> segments peak around two hundred meters. But NPMRDS
+> segments can be twenty kilometers long.
+
+> [NARRATOR] A hundred-to-one ratio. How do you
+> compare a two hundred meter segment to a twenty
+> kilometer segment?
+
+> [DARSHAN] You don't compare them directly. That's
+> the whole point. You need geometric similarity
+> measures that handle different-length curves.
+
+> [NARRATOR] So the data preprocessing alone is a
+> research contribution. Before any matching happens,
+> you need the right representation.
+
+FADEOUT: figure
+
+SHOW: ImageMobject fig2_aadt_distributions.png, width=10, centered
+
+> [DARSHAN] Exactly. And here's the traffic volume.
+> The HPMS records Average Annual Daily Traffic — AADT.
+> But you can't use linear bins. A rural road with five
+> hundred vehicles and a highway with two hundred
+> thousand — ten percent means completely different things.
+
+> [DARSHAN] So I designed an exponential binning scheme.
+> Fifty bins where the width scales with magnitude.
+> Log-transform the histogram and it becomes nearly
+> uniform. That's how you validate the binning.
+
+> [NARRATOR, style=whispering] These datasets were
+> never designed to talk to each other.
+
+PAUSE: medium
+
+FADEOUT: all except title
+
+= BEAT 3: Walking the Dog =
+
+TITLE: "Walking the Dog" (top, replace previous)
+
+> [NARRATOR] To match road segments, we need to measure
+> how similar two curves are. And there's a beautiful
+> idea from computational geometry that does exactly this.
+
+SHOW: two curved paths — red (Person's path, upper) and blue (Dog's path, lower)
+  use smooth parametric curves with 6 anchor points each
+  label each path
+
+> [NARRATOR] Imagine a person walking along one road,
+> and their dog walking along another. They're connected
+> by a leash.
+
+SHOW: person dot ($CREAM) on red path, dog dot ($COLOR_HIGHLIGHT) on blue path
+SHOW: dashed line connecting them (leash)
+SHOW: "Leash: X.XX" live readout, "Max leash: X.XX" at bottom
+
+> [NARRATOR, rate=-10%] Here is the rule. Neither the
+> person nor the dog can go backwards. They can speed
+> up, slow down, even stop and wait. But they must
+> always move forward.
+
+ANIMATE: both dots walk along their paths simultaneously over 6 seconds
+  leash updates in real-time, max-leash tracker updates
+
+> [NARRATOR, rate=-10%] The Frechet distance is the
+> shortest possible longest leash needed to complete
+> the walk.
+
+PAUSE: medium
+
+ANIMATE: flash max-leash value, scale up slightly
+
+> [DARSHAN] The worst-case best-case distance. You
+> optimize the walk to minimize the maximum leash.
+> And that no-backtracking rule is what makes it
+> perfect for roads. Roads have direction.
+
+> [NARRATOR, style=whispering] Remember this structure.
+> Optimizing over all valid couplings to minimize cost.
+> We'll see it again.
+
+FADEOUT: walking animation, keep paths faded
+
+SHOW: ImageMobject fig4_frechet_hausdorff.png, width=8, centered
+
+> [NARRATOR] Now compare that to Hausdorff distance.
+> Hausdorff allows backtracking. It treats curves as
+> point sets, ignoring order. A weaker measure.
+
+FADEOUT: figure
+
+SHOW: two comparison cards side-by-side
+  LEFT ($TEAL): "Frechet Distance", "No backtracking", "Order-aware", "Weight = 3"
+  RIGHT ($SLATE): "Hausdorff Distance", "Backtracking OK", "Set-based", "Weight = 2"
+
+> [DARSHAN] I use both in my algorithm. Frechet is
+> stronger, so it gets weight three. Hausdorff gets two.
+
+> [NARRATOR] Why not Frechet alone?
+
+> [DARSHAN] Because Hausdorff catches cases where two
+> curves are close everywhere but the endpoints are
+> swapped. HPMS segments don't encode direction
+> consistently — one line for both carriageways. So I
+> compute the Frechet distance twice, forwards and
+> reversed, and take the minimum. Hausdorff handles
+> that naturally.
+
+PAUSE: medium
+
+FADEOUT: all except title
+
+= BEAT 4: The Algorithm =
+
+TITLE: "The Algorithm" (top, replace previous)
+
+> [DARSHAN] Let me walk you through the whole thing.
+
+SHOW: road segment (thick $COLOR_MEASUREMENT line, curved)
+ANIMATE: translucent buffer zone expands around it (150m)
+SHOW: candidate segments appear inside buffer (green lines)
+  one segment outside buffer (dim grey, fades)
+
+> [DARSHAN] Step one: buffer search. Take a segment from
+> the primary dataset. Build a hundred-fifty-meter buffer
+> around it. Every segment from the other dataset that
+> touches this buffer becomes a candidate.
+
+FADEOUT: buffer visualization
+
+SHOW: ImageMobject fig3_buffer_search.png, width=9, centered
+
+> [DARSHAN] This is the I-95 and Capital Beltway
+> interchange in Maryland. The blue line is our TMC
+> segment. The purple is the buffer. The green lines
+> are all the HPMS candidates it pulled in.
+
+> [NARRATOR] That's a lot of candidates at an interchange.
+
+> [DARSHAN] Exactly. And at interchanges is where you
+> need scoring the most.
+
+FADEOUT: figure
+
+SHOW: five scoring measure cards arranged horizontally
+  each card: name, weight, type (Geometric=$TEAL, Semantic=$COLOR_HIGHLIGHT)
+  1: "Angular Parallelism" w=3 Geometric
+  2: "Frechet Distance" w=3 Geometric
+  3: "Hausdorff Distance" w=2 Geometric
+  4: "Road Number (Levenshtein)" w=4 Semantic
+  5: "Road Name (Levenshtein)" w=1 Semantic
+
+> [DARSHAN] Five measures. Three geometric, two semantic.
+> Angular parallelism tells you if segments run parallel —
+> the sine of the absolute angle, scaled to a hundred.
+> Frechet and Hausdorff measure shape similarity — we
+> just covered those.
+
+> [DARSHAN] Then Levenshtein distance for the text.
+> Road number gets weight four — the highest weight in
+> the entire system. I-95 is always I-95. It's the most
+> reliable data in both datasets.
+
+> [NARRATOR] And road name?
+
+> [DARSHAN, style=unfriendly] Weight one. Road names in
+> HPMS are a disaster. Missing, inconsistent, sometimes
+> just the number repeated. I learned that the hard way.
+
+ANIMATE: highlight high-weight cards (Road Number, Frechet, Angle)
+
+TEXT: "Best match = min(Score)" (below cards, $COLOR_HIGHLIGHT)
+
+> [DARSHAN] Weighted sum of all five. Pick the candidate
+> with the lowest score. That's your best match.
+
+> [NARRATOR, style=whispering] A weighted sum. Simple.
+> But effective.
+
+PAUSE: medium
+
+FADEOUT: all except title
+
+= BEAT 5: The Results =
+
+TITLE: "The Results" (top, replace previous)
+
+> [DARSHAN] We ran the algorithm in both directions.
+> NPMRDS to HPMS, and HPMS to NPMRDS. You need both —
+> one direction finds excess segments, the other finds
+> missing ones.
+
+SHOW: ImageMobject fig6_gumbel_distributions.png, width=10, centered
+
+> [NARRATOR, style=newscast] The final scores follow a
+> Gumbel distribution — Extreme Value Type one. That's
+> expected. You're taking the minimum among candidates,
+> which is an extreme value operation. The long right
+> tail is where the mismatches live.
+
+> [DARSHAN] The practical question is: where do you
+> draw the cutoff? We discarded the top half-percent
+> as unreliable matches.
+
+FADEOUT: figure
+
+SHOW: ImageMobject fig5_excess_missing_maps.png, width=10, centered
+
+> [DARSHAN] Here's what the data looks like on a map.
+> Yellow lines are NHS roads from HPMS. Black lines
+> are NPMRDS. Where they don't overlap, something is
+> wrong.
+
+FADEOUT: figure
+
+SHOW: ImageMobject fig7_combined.png, width=10, centered
+ANIMATE: stat numbers count up from 0% — "Excess: 5.11%" ($COLOR_PREDICTION), "Missing: 3.10%" ($TEAL)
+
+> [DARSHAN] Red segments are excess TMC — roads in the
+> travel time dataset that shouldn't be there. Purple
+> segments are missing — NHS roads with no travel time
+> coverage at all. In Delaware, Maryland and DC alone.
+
+> [NARRATOR] Five percent excess. Three percent missing.
+
+> [DARSHAN, rate=-10%] If your map is wrong, your
+> congestion numbers are wrong. Your greenhouse gas
+> estimates are wrong. The funding allocations based
+> on those numbers — wrong. This is what we found
+> when we looked at just three states.
+
+PAUSE: long
+
+FADEOUT: all except title
+
+= BEAT 6: The Blind Spot =
+
+TITLE: "The Blind Spot" (top, replace previous)
+
+> [NARRATOR] But here's something your algorithm
+> cannot see.
+
+SHOW: simple road network — 5 nodes connected by edges
+SHOW: two overlapping copies — blue (NPMRDS) offset up-left, red (HPMS) offset down-right
+  labels on either side
+
+> [NARRATOR] Your algorithm matches each segment
+> independently. For each primary segment, find the
+> best-scoring candidate. Move on to the next.
+
+ANIMATE: highlight a junction node where 3 roads meet in both networks
+SHOW: dashed gold line connecting the two junction positions
+TEXT: "Same intersection,\ndifferent positions" (below networks)
+
+> [NARRATOR] But roads don't exist in isolation. They
+> form a network. At this junction, three roads meet.
+> If you match each edge independently, the matched
+> segments might not connect properly at the node.
+
+> [DARSHAN] The matches are still locally correct.
+
+> [NARRATOR, rate=-10%] Locally, yes. But globally,
+> you've broken the topology. The graph structure
+> carries information that your greedy, segment-by-segment
+> approach cannot capture.
+
+SHOW: insight box ($TEAL border):
+  "Roads are not isolated curves"
+  "they form a network."
+  "Topology carries information"
+  "that local features ignore."
+
+PAUSE: long
+
+> [DARSHAN] I know. I knew that when I wrote it.
+> The algorithm was designed for the national scale —
+> a hundred fifty thousand miles of NHS. It had to be
+> fast. Local measures scale linearly. Graph matching
+> is combinatorial. Not feasible at that size.
+> Not in 2019.
+
+> [NARRATOR, style=hopeful] But the mathematics
+> doesn't care about scale. The question is still
+> there. What would a graph-aware version look like?
+
+FADEOUT: networks, insight box (keep title)
+
+> [NARRATOR] In twenty twenty-two, Kim and colleagues
+> answered exactly that. Their algorithm — APSG —
+> matches road networks by exploiting graph topology.
+
+SHOW: two simple road networks (4 nodes, 5 edges each)
+  source in $COLOR_MEASUREMENT, target in $TEAL
+ANIMATE: nodes matched first (gold arrows connecting pairs), preserving degree
+  then edges follow naturally
+
+> [NARRATOR] Instead of matching edges in isolation,
+> you match nodes first — preserving degree, the
+> number of connections. A four-way intersection maps
+> to a four-way intersection. Then the edges between
+> matched nodes are determined automatically.
+
+> [DARSHAN] That's elegant. Using the structure to
+> constrain the matching. I wish I'd had that in
+> twenty-nineteen.
+
+FADEOUT: networks
+
+SHOW: three-level hierarchy, stacked vertically with arrows
+  BOTTOM ($COLOR_MEASUREMENT): "Local Features" — "Frechet, Hausdorff, Angular, Levenshtein" — "Pandit et al. (2019)"
+  MIDDLE ($TEAL): "Graph Topology" — "APSG, Node-Arc models" — "Kim et al. (2022)"
+  TOP ($COLOR_FILTER_TF): "Optimal Transport" — "Wasserstein, Hungarian, Network flow" — "Future direction"
+ANIMATE: cards appear bottom-to-top with arrows growing between them
+
+> [NARRATOR] And this reveals a hierarchy. At the
+> bottom: local features. Segment-by-segment
+> comparison. That's your twenty-nineteen paper.
+
+> [NARRATOR] In the middle: graph topology. Exploit
+> the network structure. That's twenty twenty-two.
+
+> [NARRATOR, rate=-10%] At the top: optimal transport.
+> Treat the entire road network as a distribution
+> and find the cheapest way to transform one into
+> the other.
+
+ANIMATE: top card (Optimal Transport) pulses, lower cards fade to 60% opacity
+
+> [DARSHAN] We started at the bottom. And honestly,
+> starting at the bottom was the right move. You
+> have to understand the local structure before you
+> can reason about the global one.
+
+> [NARRATOR] And now you can see where the
+> mathematics leads.
+
+PAUSE: long
+
+FADEOUT: all except title
+
+= BEAT 7: The Bridge =
+
+TITLE: "The Bridge" (top, replace previous)
+
+> [NARRATOR, style=newscast] Here is the connection
+> that ties this entire dissertation together.
+
+SHOW: two column panels
+  LEFT ($COLOR_MEASUREMENT): "Map Conflation" — "Match road segments across datasets" — "Greedy best-match" — "Minimize local score"
+  RIGHT ($TEAL): "Object Tracking" — "Match bounding boxes across frames" — "Hungarian algorithm" — "Minimize global cost"
+ANIMATE: double arrows connecting parallel concepts between columns
+
+> [DARSHAN] When I was working on the smart crosswalk
+> — SHAUM703 — I needed to track pedestrians across
+> video frames. And I realized the structure of the
+> problem was the same as what I'd already solved.
+
+> [DARSHAN] Match road segments across datasets.
+> Match bounding boxes across frames. Both are
+> assignment problems. My conflation algorithm does it
+> greedily — best local match. SORT does it globally
+> with the Hungarian algorithm. Same mathematical
+> structure, different optimization.
+
+> [NARRATOR] Same problem. Different solvers.
+
+TEXT: "Both are assignment problems" (bottom, $COLOR_HIGHLIGHT)
+
+PAUSE: medium
+
+FADEOUT: columns
+
+SHOW: side-by-side visual
+  LEFT: brief dog-walking replay — person dot and dog dot on curves with leash
+    label "Frechet" below, label "Optimal coupling along curves" below that
+  RIGHT: two probability blobs (one $COLOR_MEASUREMENT, one $TEAL) morphing toward each other
+    label "Wasserstein" below, label "Optimal mass transport" below that
+ANIMATE: LEFT plays the walk, RIGHT morphs the blobs simultaneously
+
+> [NARRATOR, rate=-15%] And the connection goes deeper.
+> Watch. On the left: the Frechet distance. You
+> optimize how to couple points along two curves.
+> On the right: the Wasserstein distance. You optimize
+> how to transport mass between two distributions.
+
+> [NARRATOR] Both ask the same question: what is the
+> cheapest way to match one shape to another? Both
+> optimize over all valid couplings to minimize cost.
+
+SHOW: insight card ($COLOR_FILTER_TF border, centered):
+  "Frechet: optimal coupling of curves."
+  "Wasserstein: optimal coupling of distributions."
+  "Same mathematical structure:"
+  "optimize over couplings, minimize cost."
+
+PAUSE: long
+
+FADEOUT: card, side-by-side
+
+SHOW: three stacked dissertation arc cards (bottom to top, with arrows):
+  BOTTOM ($COLOR_MEASUREMENT): "Data Infrastructure" — "Pandit et al. 2019" — "Get the map right"
+  MIDDLE ($COLOR_HIGHLIGHT): "Signal Processing" — "Parts 1-9 (Kalman Filters)" — "Filter the noise"
+  TOP ($COLOR_PREDICTION): "Applied System" — "SHAUM703 (Smart Crosswalks)" — "Save lives"
+ANIMATE: appear bottom-to-top with arrows growing
+
+> [DARSHAN] And so the dissertation arc becomes clear.
+> At the foundation: data infrastructure. Get the map
+> right. Without accurate road geometry, nothing
+> downstream works.
+
+> [DARSHAN] In the middle: signal processing. The
+> Kalman filter series. Filter the noise from GPS,
+> from sensors, from the world.
+
+> [DARSHAN] At the top: the applied system. Smart
+> crosswalks. Track pedestrians at intersections.
+> Save lives.
+
+PAUSE: medium
+
+ANIMATE: bottom card (Data Infrastructure) stroke pulses
+
+> [DARSHAN, rate=-15%] Before you can track
+> pedestrians, you need to know where the road is.
+> Before you can filter signals, you need the right
+> model of the world.
+
+NOTE: "Pandit, Kaushik & Cirillo (2019). TRR 2673(4), pp. 583-592."
+
+> [NARRATOR, style=hopeful] This paper is the
+> foundation layer. The map under the map.
+
+PAUSE: long
+
+FADEOUT: all

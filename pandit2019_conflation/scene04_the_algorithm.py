@@ -1,55 +1,56 @@
 """Scene 04: The Algorithm — Buffer search and 5-measure scoring system.
 
-Practical methodology walkthrough: how conflation candidates are found
-via buffer search and ranked with a weighted composite score.
+Azure multi-voice scene. Darshan walks through the practical methodology:
+buffer search for candidates, five scoring measures with weights, and
+composite score selection. Jenny provides narrator counterpoint.
+
+Voices: narrator (Jenny, chat), narrator_whisper (Jenny, whispering),
+        darshan (Tony, friendly), darshan_unfriendly (Tony, unfriendly).
 """
 
 from __future__ import annotations
 
 from manim import *
 from manim_voiceover import VoiceoverScene
-from manim_voiceover.services.gtts import GTTSService
+from manim_voiceover.services.azure import AzureService
 import numpy as np
 import sys, os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from kalman_manim.style import *
-from pandit2019_conflation.data import *
+from pandit2019_conflation.data import RESULTS, SCORING_MEASURES, fig_path
 
 
 class SceneTheAlgorithm(VoiceoverScene, MovingCameraScene):
     def construct(self):
-        self.set_speech_service(GTTSService())
+        # ── Voice services ─────────────────────────────────────────
+        narrator = AzureService(voice="en-US-JennyNeural", style="chat")
+        narrator_whisper = AzureService(voice="en-US-JennyNeural", style="whispering")
+        darshan = AzureService(voice="en-US-TonyNeural", style="friendly")
+        darshan_unfriendly = AzureService(voice="en-US-TonyNeural", style="unfriendly")
+        self.set_speech_service(darshan)
         self.camera.background_color = BG_COLOR
 
-        # ── Title ─────────────────────────────────────────────────────
+        # ── Title ──────────────────────────────────────────────────
         title = Text(
             "The Algorithm", color=COLOR_TEXT, font_size=TITLE_FONT_SIZE,
         )
         title.to_edge(UP, buff=0.3).set_z_index(10)
 
         with self.voiceover(
-            text="Here is how the conflation actually works, step by step. "
-                 "Given a road segment from one dataset, "
-                 "how do we find its best match in the other?"
+            text="Let me walk you through the whole thing."
         ) as tracker:
             self.play(FadeIn(title, shift=DOWN * 0.3), run_time=NORMAL_ANIM)
-            self.wait(PAUSE_MEDIUM)
+            self.wait(PAUSE_SHORT)
 
-        # ── Step 1: Buffer search visualization ───────────────────────
-        step_lbl = Text(
-            "Step 1: Buffer Search", color=COLOR_HIGHLIGHT,
-            font_size=HEADING_FONT_SIZE,
-        )
-        step_lbl.next_to(title, DOWN, buff=0.4)
-
-        # Main road segment (thick blue line)
+        # ── Buffer search visualization ────────────────────────────
+        # Main road segment (curved blue line)
         road_anchors = [
-            np.array([-4.0, -0.5, 0]),
-            np.array([-1.5, 0.3, 0]),
-            np.array([1.0, -0.2, 0]),
-            np.array([3.5, 0.4, 0]),
+            np.array([-4.0, -0.3, 0]),
+            np.array([-1.5, 0.5, 0]),
+            np.array([1.0, -0.1, 0]),
+            np.array([3.5, 0.6, 0]),
         ]
         road = VMobject()
         road.set_points_smoothly(road_anchors)
@@ -61,19 +62,7 @@ class SceneTheAlgorithm(VoiceoverScene, MovingCameraScene):
         )
         road_label.next_to(road, DOWN, buff=0.15)
 
-        with self.voiceover(
-            text="Start with a TMC segment, a traffic monitoring road segment. "
-                 "We need to search for matching HPMS segments nearby."
-        ) as tracker:
-            self.play(
-                FadeIn(step_lbl),
-                Create(road), FadeIn(road_label),
-                run_time=NORMAL_ANIM,
-            )
-            self.wait(PAUSE_SHORT)
-
-        # Buffer zone (translucent expanded region)
-        # Create a thick transparent stroke around the road to simulate a buffer
+        # Buffer zone — thick translucent stroke around the road
         buffer_zone = road.copy()
         buffer_zone.set_stroke(
             color=COLOR_MEASUREMENT, width=80, opacity=0.12,
@@ -81,26 +70,25 @@ class SceneTheAlgorithm(VoiceoverScene, MovingCameraScene):
         buffer_zone.set_fill(opacity=0)
 
         buffer_label = Text(
-            "150m buffer", color=COLOR_TEXT, font_size=SMALL_FONT_SIZE,
+            "150 m buffer", color=COLOR_TEXT, font_size=SMALL_FONT_SIZE,
         )
         buffer_label.next_to(road, UP, buff=1.2)
 
-        # Candidate segments (green lines appearing inside buffer)
+        # Candidate segments: 3 inside (green), 1 outside (grey)
         candidate_data = [
-            ([(-3.8, 0.3), (-1.2, 0.9), (0.5, 0.5)], True),
-            ([(-3.5, -1.0), (-1.0, -0.6), (1.5, -0.9)], True),
-            ([(0.5, 0.8), (2.0, 0.2), (3.8, 0.7)], True),
-            ([(-4.5, 1.8), (-2.0, 2.2), (0.0, 1.9)], False),  # outside
+            ([(-3.8, 0.4), (-1.2, 1.0), (0.5, 0.6)], True),
+            ([(-3.5, -0.9), (-1.0, -0.5), (1.5, -0.8)], True),
+            ([(0.5, 0.9), (2.0, 0.3), (3.8, 0.8)], True),
+            ([(-4.5, 1.9), (-2.0, 2.3), (0.0, 2.0)], False),
         ]
 
         candidates = VGroup()
-        inside_label_shown = False
         for anchors, is_inside in candidate_data:
             pts = [np.array([x, y, 0]) for x, y in anchors]
             seg = VMobject()
             seg.set_points_smoothly(pts)
             if is_inside:
-                seg.set_color("#27ae60")  # green
+                seg.set_color("#27ae60")
                 seg.set_stroke(width=3)
             else:
                 seg.set_color(SLATE)
@@ -108,15 +96,17 @@ class SceneTheAlgorithm(VoiceoverScene, MovingCameraScene):
             candidates.add(seg)
 
         with self.voiceover(
-            text="Draw a 150-meter buffer around that segment. "
-                 "Any HPMS segments that fall within this buffer "
-                 "become candidates for matching. "
-                 "Segments outside the buffer are ignored entirely, "
-                 "saving massive computation."
+            text=(
+                "Step one: buffer search. Take a segment from the primary "
+                "dataset. Build a hundred-fifty-meter buffer around it. "
+                "Every segment from the other dataset that touches this "
+                "buffer becomes a candidate."
+            )
         ) as tracker:
+            self.play(Create(road), FadeIn(road_label), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_SHORT)
             self.play(
-                FadeIn(buffer_zone),
-                FadeIn(buffer_label),
+                FadeIn(buffer_zone), FadeIn(buffer_label),
                 run_time=NORMAL_ANIM,
             )
             self.wait(PAUSE_SHORT)
@@ -133,43 +123,57 @@ class SceneTheAlgorithm(VoiceoverScene, MovingCameraScene):
                 candidates[-1].animate.set_stroke(opacity=0.15),
                 run_time=FAST_ANIM,
             )
-            self.wait(PAUSE_MEDIUM)
+            self.wait(PAUSE_SHORT)
 
-        # ── Show Fig 3 from the paper ─────────────────────────────────
+        # ── Fade out buffer visualization ──────────────────────────
         buffer_group = VGroup(
-            road, road_label, buffer_zone, buffer_label, candidates, step_lbl,
+            road, road_label, buffer_zone, buffer_label, candidates,
         )
         self.play(FadeOut(buffer_group), run_time=FAST_ANIM)
 
+        # ── Figure 3: Buffer search from paper ─────────────────────
         fig3 = ImageMobject(fig_path("fig3_buffer_search.png"))
         fig3.scale_to_fit_width(9).move_to(ORIGIN + DOWN * 0.3)
 
         with self.voiceover(
-            text="Here is a real example from the paper: "
-                 "the I-95 and I-495 interchange near Washington D.C. "
-                 "Notice how the buffer captures nearby candidates "
-                 "without an exhaustive search over the entire network."
+            text=(
+                "This is the I-95 and Capital Beltway interchange in "
+                "Maryland. The blue line is our TMC segment. The purple "
+                "is the buffer. The green lines are all the HPMS "
+                "candidates it pulled in."
+            )
         ) as tracker:
             self.play(FadeIn(fig3), run_time=NORMAL_ANIM)
             self.wait(PAUSE_LONG)
 
+        # ── Narrator interjection ──────────────────────────────────
+        self.set_speech_service(narrator)
+
+        with self.voiceover(
+            text="That's a lot of candidates at an interchange."
+        ) as tracker:
+            self.wait(PAUSE_SHORT)
+
+        # ── Darshan responds ───────────────────────────────────────
+        self.set_speech_service(darshan)
+
+        with self.voiceover(
+            text=(
+                "Exactly. And at interchanges is where you need "
+                "scoring the most."
+            )
+        ) as tracker:
+            self.wait(PAUSE_MEDIUM)
+
+        # ── Fade out figure ────────────────────────────────────────
         self.play(FadeOut(fig3), run_time=FAST_ANIM)
 
-        # ── Step 2: The 5 scoring measures ────────────────────────────
-        step2_lbl = Text(
-            "Step 2: Score Each Candidate", color=COLOR_HIGHLIGHT,
-            font_size=HEADING_FONT_SIZE,
-        )
-        step2_lbl.next_to(title, DOWN, buff=0.4)
-
+        # ── Five scoring measure cards ─────────────────────────────
         sm = SCORING_MEASURES
-
-        # Build 5 cards in a row
         cards = VGroup()
-        card_width = 2.2
-        card_height = 2.8
-        total_width = 5 * card_width + 4 * 0.15
-        start_x = -total_width / 2 + card_width / 2
+        card_width = 2.15
+        card_height = 2.9
+        gap = 0.12
 
         for i in range(5):
             is_geo = sm["types"][i] == "geometric"
@@ -181,39 +185,51 @@ class SceneTheAlgorithm(VoiceoverScene, MovingCameraScene):
                 fill_color=DARK_SLATE, fill_opacity=0.85,
                 stroke_color=card_color, stroke_width=2,
             )
-            x_pos = start_x + i * (card_width + 0.15)
-            bg.move_to(np.array([x_pos, -0.4, 0]))
 
             name_text = Text(
                 sm["names"][i], color=card_color,
                 font_size=CHART_LABEL_FONT_SIZE,
-            ).move_to(bg.get_top() + DOWN * 0.45)
+            ).move_to(bg.get_top() + DOWN * 0.5)
 
-            weight_text = Text(
-                f"Weight: {sm['weights'][i]}",
+            weight_badge_bg = RoundedRectangle(
+                width=1.1, height=0.45, corner_radius=0.08,
+                fill_color=card_color, fill_opacity=0.2,
+                stroke_color=card_color, stroke_width=1.5,
+            )
+            weight_badge_text = Text(
+                f"w = {sm['weights'][i]}",
                 color=CREAM, font_size=CHART_LABEL_FONT_SIZE,
-            ).next_to(name_text, DOWN, buff=0.3)
+            )
+            weight_badge_bg.next_to(name_text, DOWN, buff=0.25)
+            weight_badge_text.move_to(weight_badge_bg)
+            weight_badge = VGroup(weight_badge_bg, weight_badge_text)
 
             type_text = Text(
                 type_label, color=SLATE, font_size=CHART_TICK_FONT_SIZE,
-            ).next_to(weight_text, DOWN, buff=0.2)
+            ).next_to(weight_badge, DOWN, buff=0.2)
 
             symbol_text = Text(
                 sm["symbols"][i], color=card_color,
                 font_size=HEADING_FONT_SIZE,
-            ).next_to(type_text, DOWN, buff=0.2)
+            ).next_to(type_text, DOWN, buff=0.15)
 
-            card = VGroup(bg, name_text, weight_text, type_text, symbol_text)
+            card = VGroup(bg, name_text, weight_badge, type_text, symbol_text)
             cards.add(card)
 
+        cards.arrange(RIGHT, buff=gap)
+        cards.next_to(title, DOWN, buff=0.5)
+        # Scale to fit safe frame width if needed
+        if cards.width > 11.4:
+            cards.scale_to_fit_width(11.4)
+
         with self.voiceover(
-            text="Once we have candidates, we score each one on five measures. "
-                 "Three are geometric: angular parallelism, "
-                 "Frechet distance, and Hausdorff distance. "
-                 "Two are semantic: road number matching and road name matching, "
-                 "both using Levenshtein edit distance."
+            text=(
+                "Five measures. Three geometric, two semantic. Angular "
+                "parallelism tells you if segments run parallel — the sine "
+                "of the absolute angle, scaled to a hundred. Frechet and "
+                "Hausdorff measure shape similarity — we just covered those."
+            )
         ) as tracker:
-            self.play(FadeIn(step2_lbl), run_time=FAST_ANIM)
             self.play(
                 LaggedStart(
                     *[FadeIn(card, shift=UP * 0.3) for card in cards],
@@ -223,99 +239,91 @@ class SceneTheAlgorithm(VoiceoverScene, MovingCameraScene):
             )
             self.wait(PAUSE_LONG)
 
-        # Highlight the weights
+        # ── Darshan on semantic weights ────────────────────────────
         with self.voiceover(
-            text="Notice the weights. Road number gets the highest weight of 4 "
-                 "because it is the most consistent attribute across datasets. "
-                 "Road name gets only 1 because it is often inconsistent in HPMS. "
-                 "Frechet and angular parallelism each get 3, "
-                 "and Hausdorff gets 2."
+            text=(
+                "Then Levenshtein distance for the text. Road number gets "
+                "weight four — the highest weight in the entire system. "
+                "I-95 is always I-95. It's the most reliable data in "
+                "both datasets."
+            )
         ) as tracker:
-            for i, w in enumerate(sm["weights"]):
-                if w >= 3:
-                    self.play(
-                        cards[i][0].animate.set_stroke(width=4),
-                        cards[i][2].animate.set_color(COLOR_HIGHLIGHT),
-                        run_time=0.3,
-                    )
+            # Pulse the Road Number card (index 3)
+            self.play(
+                cards[3][0].animate.set_stroke(width=4),
+                run_time=FAST_ANIM,
+            )
             self.wait(PAUSE_LONG)
 
-        # ── Step 3: The composite score equation ──────────────────────
-        self.play(
-            FadeOut(cards), FadeOut(step2_lbl),
-            run_time=FAST_ANIM,
-        )
+        # ── Narrator asks about road name ──────────────────────────
+        self.set_speech_service(narrator)
 
-        step3_lbl = Text(
-            "Step 3: Select Best Match", color=COLOR_HIGHLIGHT,
-            font_size=HEADING_FONT_SIZE,
-        )
-        step3_lbl.next_to(title, DOWN, buff=0.4)
+        with self.voiceover(
+            text="And road name?"
+        ) as tracker:
+            self.wait(PAUSE_SHORT)
 
-        # Score equation as Text
-        eq_line1 = Text(
-            "Score = 3 * Angle + 3 * Frechet + 2 * Hausdorff",
-            color=COLOR_TEXT, font_size=BODY_FONT_SIZE,
-        )
-        eq_line2 = Text(
-            "         + 4 * RoadNum + 1 * RoadName",
-            color=COLOR_TEXT, font_size=BODY_FONT_SIZE,
-        )
-        eq_line2.next_to(eq_line1, DOWN, buff=0.15, aligned_edge=LEFT)
-        eq_group = VGroup(eq_line1, eq_line2).move_to(ORIGIN + UP * 0.3)
+        # ── Darshan_unfriendly on road name ────────────────────────
+        self.set_speech_service(darshan_unfriendly)
 
-        best_match = Text(
-            "Best match = candidate with minimum Score",
+        with self.voiceover(
+            text=(
+                "Weight one. Road names in HPMS are a disaster. Missing, "
+                "inconsistent, sometimes just the number repeated. "
+                "I learned that the hard way."
+            )
+        ) as tracker:
+            # Dim the Road Name card (index 4) border to emphasize low weight
+            self.play(
+                cards[4][0].animate.set_stroke(opacity=0.5),
+                run_time=FAST_ANIM,
+            )
+            self.wait(PAUSE_LONG)
+
+        # ── Highlight high-weight cards ────────────────────────────
+        self.set_speech_service(darshan)
+
+        # Indices with weight >= 3: 0 (Angle, w=3), 1 (Frechet, w=3), 3 (Road Number, w=4)
+        high_weight_indices = [i for i, w in enumerate(sm["weights"]) if w >= 3]
+
+        # Build highlight animations: pulse borders of high-weight cards
+        highlight_anims = []
+        for idx in high_weight_indices:
+            highlight_anims.append(
+                cards[idx][0].animate.set_stroke(
+                    color=COLOR_HIGHLIGHT, width=4,
+                )
+            )
+
+        best_match_text = Text(
+            "Best match = min(Score)",
             color=COLOR_HIGHLIGHT, font_size=BODY_FONT_SIZE,
         )
-        best_match.next_to(eq_group, DOWN, buff=0.6)
-
-        # Visual explanation box
-        note_bg = RoundedRectangle(
-            width=9, height=1.2, corner_radius=0.15,
-            fill_color=DARK_SLATE, fill_opacity=0.7,
-            stroke_color=TEAL, stroke_width=1.5,
-        )
-        note_bg.next_to(best_match, DOWN, buff=0.4)
-        note_text = Text(
-            "All measures are normalized to [0,1] before weighting.\n"
-            "Lower score = better geometric + semantic alignment.",
-            color=COLOR_TEXT, font_size=SMALL_FONT_SIZE,
-        )
-        note_text.move_to(note_bg)
-        note = VGroup(note_bg, note_text)
+        best_match_text.next_to(cards, DOWN, buff=0.5)
 
         with self.voiceover(
-            text="Each measure is normalized to a zero-to-one scale, "
-                 "then multiplied by its weight and summed. "
-                 "The candidate with the lowest composite score wins. "
-                 "It is simple, interpretable, and effective."
+            text=(
+                "Weighted sum of all five. Pick the candidate with the "
+                "lowest score. That's your best match."
+            )
         ) as tracker:
-            self.play(FadeIn(step3_lbl), run_time=FAST_ANIM)
-            self.play(
-                FadeIn(eq_group, shift=UP * 0.2),
-                run_time=NORMAL_ANIM,
-            )
+            self.play(*highlight_anims, run_time=NORMAL_ANIM)
             self.wait(PAUSE_SHORT)
-            self.play(
-                FadeIn(best_match, shift=UP * 0.2),
-                run_time=NORMAL_ANIM,
-            )
-            self.wait(PAUSE_SHORT)
-            self.play(FadeIn(note), run_time=FAST_ANIM)
-            self.wait(PAUSE_LONG)
+            self.play(FadeIn(best_match_text, shift=UP * 0.2), run_time=NORMAL_ANIM)
+            self.wait(PAUSE_MEDIUM)
 
-        # Final voiceover summarizing the pipeline
+        # ── Narrator whisper close ─────────────────────────────────
+        self.set_speech_service(narrator_whisper)
+
         with self.voiceover(
-            text="So the full pipeline is: buffer search to find candidates, "
-                 "compute five similarity measures, weight and combine them, "
-                 "pick the minimum score. "
-                 "Elegant in its simplicity."
+            text="A weighted sum. Simple. But effective."
         ) as tracker:
-            self.wait(PAUSE_LONG)
+            self.wait(PAUSE_MEDIUM)
 
-        # ── Fade out ──────────────────────────────────────────────────
+        # ── Fade out ───────────────────────────────────────────────
         self.play(
-            *[FadeOut(mob) for mob in self.mobjects],
+            *[FadeOut(mob) for mob in self.mobjects if mob is not title],
             run_time=NORMAL_ANIM,
         )
+        self.wait(PAUSE_MEDIUM)
+        self.play(FadeOut(title), run_time=FAST_ANIM)
