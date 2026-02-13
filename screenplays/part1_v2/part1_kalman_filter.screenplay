@@ -1,0 +1,334 @@
+PART 1: Kalman Filters (v2)
+SCENE 01: The Kalman Filter — "Four equations. Sixty years. Still unbeaten."
+
+REFERENCES:
+  - Pellegrini et al. (2009) — ETH Zurich pedestrian dataset
+  - Kalman (1960) — A new approach to linear filtering and prediction problems
+  - Harvey (1989) — Forecasting, Structural Time Series Models, and the Kalman Filter
+
+VOICES:
+  NARRATOR: Azure en-US-JennyNeural, style=chat
+  SKEPTIC: Azure en-US-TonyNeural, style=friendly
+
+DATA:
+  hook_source: eth/pedestrian #171
+  hook_params: measurement_noise=0.6, max_steps=60, seed=42
+  hook_filter: KalmanFilter(F=CV_4D, Q=0.1*I4, R=0.36*I2, P0=I4)
+
+  gaussian_demo: synthetic parameters
+  predicted_mean: [2.0, 1.0], predicted_cov: [[1.2, 0.4], [0.4, 0.8]]
+  measurement_z: [3.5, 0.3], R_meas: [[0.5, 0.0], [0.0, 0.4]]
+
+  knobs_demo: synthetic state-space
+  initial_mean: [1.0, 1.0], initial_cov: [[0.5, 0.2], [0.2, 0.3]]
+  F: [[1, 1], [0, 1]], Q: [[0.3, 0.0], [0.0, 0.2]]
+  H: [[1, 0]], R: [[0.5]]
+
+  demo_source: eth/hotel/pedestrian #236
+  demo_params: measurement_noise=0.5, max_steps=36, seed=7
+  demo_filter: KalmanFilter(F=CV_4D, q=0.05 CWNA, R=0.25*I2, P0=diag(1,1,0.5,0.5))
+
+  failure_source: curated sharp-turn trajectory
+  failure_params: generate_sharp_turn_trajectory(turn_rate=0.15, n_steps=60)
+  failure_filter: KalmanFilter(F=CV_4D, Q=0.1*I4, R=0.36*I2, P0=I4)
+
+= BEAT 1: The lie =
+
+SHOW: single GPS dot pulsing at wrong position (offset 1.5 units from true start)
+
+> [NARRATOR] According to your GPS, you're standing in the
+> middle of a parking lot. You're not. You're on the
+> sidewalk, ten meters away.
+
+> [NARRATOR, rate=-10%] Your phone is lying to you.
+
+PAUSE: medium
+
+SHOW: measurement dots appearing in batches of 8 ($COLOR_MEASUREMENT, fill_opacity=0.8)
+NOTE: "Pellegrini et al. (2009): ETH Pedestrian Dataset."
+
+> [NARRATOR] These are real GPS coordinates from the ETH
+> Zurich pedestrian dataset. Sixty readings.
+
+> [NARRATOR, rate=-15%] Every single one of them is wrong.
+
+> [SKEPTIC] How wrong?
+
+> [NARRATOR] Wrong enough that if you connected the dots,
+> you'd think this person was drunk.
+
+PAUSE: short
+
+= BEAT 2: The trick =
+
+SHOW: true path as white dashed line (40 dashes, stroke_width=2, opacity=0.8)
+
+> [NARRATOR] Here's where they actually walked. Smooth.
+> Predictable. Completely invisible to the sensor.
+
+> [SKEPTIC] So you average the measurements.
+
+> [NARRATOR] No. Averaging treats every reading equally —
+> it ignores the order, the physics, the fact that
+> consecutive positions are correlated.
+
+SHOW: KF filtered estimate path ($COLOR_POSTERIOR, stroke_width=3, Create animation)
+
+> [NARRATOR] Instead — you combine a model that's too
+> simple with a sensor that's too noisy. And the result
+> has lower error than either input alone.
+
+PAUSE: medium
+
+TITLE: "The Kalman Filter" (top, z_index=10)
+TEXT: "Kalman, 1960" (below title, small)
+
+> [NARRATOR, style=newscast] This is the Kalman Filter.
+> Rudolf Kalman, 1960. It guided Apollo to the moon. It
+> runs in every GPS chip, every autopilot, every phone
+> in your pocket.
+
+> [SKEPTIC] I've heard of it.
+
+> [NARRATOR] Then you know the name. In ten minutes,
+> you'll know the geometry.
+
+NOTE: "Kalman (1960): A New Approach to Linear\nFiltering and Prediction Problems."
+
+PAUSE: medium
+
+= BEAT 3: The engine =
+
+FADEOUT: trajectory, dots, paths, title, note
+SHOW: StateSpace axes (x_range=[-1,6], y_range=[-2,4])
+SHOW: GaussianEllipse ($COLOR_PREDICTION) at predicted_mean with predicted_cov
+TEXT: "Prediction" ($COLOR_PREDICTION, small, near ellipse)
+
+> [NARRATOR] Before the sensor says anything, you have a
+> prediction. This red ellipse — shape encodes
+> uncertainty, tilt encodes correlation.
+
+SHOW: measurement dot at z ($COLOR_MEASUREMENT, scale-in)
+SHOW: GaussianEllipse ($COLOR_MEASUREMENT, fill_opacity=0.15) at z with R_meas
+TEXT: "Measurement" ($COLOR_MEASUREMENT, small, near dot)
+
+> [NARRATOR] Then the sensor reports. Another ellipse.
+> Different center, different shape.
+
+> [SKEPTIC] Two wrong answers.
+
+ANIMATE: dim prediction and measurement ellipses to opacity 0.15
+SHOW: GaussianEllipse ($COLOR_POSTERIOR) at posterior mean with posterior cov
+TEXT: "Posterior" ($COLOR_POSTERIOR, small, near posterior)
+
+> [NARRATOR] Multiply them.
+
+PAUSE: medium
+
+> [NARRATOR, style=whispering] The gold ellipse is smaller
+> than both inputs.
+
+PAUSE: short
+
+> [SKEPTIC] Always?
+
+> [NARRATOR] Always. The posterior precision is the sum of
+> the two input precisions. Two uncertain beliefs, combined
+> correctly, always produce less uncertainty.
+
+> [NARRATOR, style=whispering] Information never hurts.
+
+PAUSE: short
+
+= BEAT 4: The four knobs =
+
+FADEOUT: axes, ellipses, labels
+SHOW: StateSpace axes (x_range=[-2,6], y_range=[-2,4], labels="position" and "velocity")
+SHOW: GaussianEllipse ($COLOR_POSTERIOR) at [1.0, 1.0] with initial_cov
+TEXT: "Current belief" ($COLOR_POSTERIOR, small)
+
+> [SKEPTIC] Where do the ellipses come from?
+
+> [NARRATOR] Four matrices. That's the entire model.
+
+SHOW: F matrix display ($COLOR_HIGHLIGHT, right side)
+TEXT: "F: your physics" (small, below F)
+ANIMATE: ellipse shears to new mean [2.0, 1.0] with F*P*F^T covariance
+
+> [NARRATOR] F encodes your physics. For a pedestrian —
+> new position equals old position plus velocity times
+> delta-t. Watch the shear. F couples position and
+> velocity.
+
+TEXT: "Q: your humility" ($COLOR_PROCESS_NOISE, replace previous)
+ANIMATE: ellipse inflates as Q is added, color shifts to $COLOR_PREDICTION
+
+> [NARRATOR] Q is how wrong your model is. Pedestrians
+> accelerate, stop, turn. Q admits that by inflating the
+> ellipse.
+
+> [SKEPTIC] What if Q is zero?
+
+> [NARRATOR] Then you're claiming your model is perfect.
+> The filter will believe you — right up until it
+> diverges spectacularly.
+
+> [NARRATOR, style=whispering] Kalman Filters are not kind
+> to hubris.
+
+FADEOUT: F matrix
+TEXT: "H projects, R is noise" (small)
+
+> [NARRATOR] H is the sensor's lens — GPS sees position
+> but not velocity, so H strips the state down to what's
+> observable. R is how much you distrust each reading.
+
+> [SKEPTIC] So Q is model doubt and R is sensor doubt.
+
+> [NARRATOR] Exactly. The Kalman gain decides which one to
+> trust more at every step.
+
+PAUSE: short
+
+= BEAT 5: The equations =
+
+FADEOUT: axes, ellipses, text
+SHOW: predict-update cycle diagram (two boxes: "Predict" $COLOR_PREDICTION, "Update" $COLOR_POSTERIOR, arrows in loop)
+
+> [NARRATOR] And that's the machine. Every timestep —
+> predict: F moves the ellipse, Q inflates it. Update:
+> the measurement pulls it back, the gain shrinks it.
+
+> [SKEPTIC] That's it?
+
+ANIMATE: shrink cycle diagram to left side (scale 0.6)
+SHOW: four equations stacked on right:
+  x^- = Fx (predict mean, $COLOR_PREDICTION)
+  P^- = FPF^T + Q (predict cov, $COLOR_PREDICTION)
+  x = x^- + K(z - Hx^-) (update mean, $COLOR_POSTERIOR)
+  P = (I - KH)P^- (update cov, $COLOR_POSTERIOR)
+
+> [NARRATOR] Four equations. Predict the mean, propagate
+> the covariance, update with the gain, shrink the
+> uncertainty.
+
+SHOW: Kalman gain below: K = P^-H^T(HP^-H^T + R)^{-1} ($COLOR_HIGHLIGHT)
+
+> [NARRATOR] The gain isn't a design choice — it's
+> derived. Write the posterior covariance as a function of
+> K, differentiate the trace, set the gradient to zero.
+> The closed-form solution is K.
+
+> [NARRATOR] If you've seen Best Linear Unbiased
+> Prediction in mixed models, you've seen half of this.
+> Same optimization, unrolled over time.
+
+> [SKEPTIC] So the Kalman Filter is BLUP — iterated.
+
+> [NARRATOR] Exactly. Harvey's 1989 textbook makes this
+> bridge to structural time series explicit.
+
+NOTE: "Harvey (1989): Forecasting, Structural Time\nSeries Models, and the Kalman Filter."
+
+PAUSE: medium
+
+= BEAT 6: Watch it breathe =
+
+FADEOUT: cycle diagram, equations, gain, note
+SHOW: legend (top-left, z_index=10): white="True path", blue="Measurement", gold="KF estimate"
+
+> [NARRATOR] Enough equations. Let's run it.
+
+> [NARRATOR] Real pedestrian. Real data. ETH Zurich hotel
+> entrance.
+
+SHOW: gold estimate dot ($COLOR_POSTERIOR) at initial position
+SHOW: GaussianEllipse ($COLOR_POSTERIOR, 2-sigma, fill_opacity=0.15)
+ANIMATE: loop over 36 measurements, for each step:
+  - FadeIn measurement dot ($COLOR_MEASUREMENT, opacity=0.6)
+  - Transform ellipse to new mean/covariance (ellipse "breathes")
+  - Move estimate dot to new position
+  - Extend true trail (white, stroke=1.5, opacity=0.6)
+  - Extend estimate trail (gold, stroke=2.5)
+  - Camera gently follows every 5th step
+  - Each step: 0.25 seconds
+
+> [NARRATOR] Watch the ellipse breathe.
+
+> [SKEPTIC] That ellipse is enormous.
+
+> [NARRATOR] It hasn't seen enough data yet.
+
+> [SKEPTIC] It's tightening.
+
+> [NARRATOR] By step ten, it's locked on.
+
+ANIMATE: camera zooms out to show full picture (ORIGIN, width=14)
+
+> [NARRATOR] Thirty-six noisy dots. One smooth gold path.
+
+PAUSE: medium
+
+= BEAT 7: The fine print =
+
+FADEOUT: demo trajectory, ellipse, dots, legend, trails
+SHOW: theorem block ($COLOR_HIGHLIGHT heading):
+  "Optimal among all
+   linear estimators"
+
+> [SKEPTIC] You keep saying optimal.
+
+> [NARRATOR, style=newscast] Among linear estimators, no
+> filter achieves lower mean squared error — regardless of
+> the noise distribution. That's the first theorem.
+
+SHOW: update theorem block:
+  "If noise is Gaussian:
+   optimal among ALL estimators"
+
+> [NARRATOR] Add the Gaussian assumption and something
+> stronger emerges — no estimator of any kind, linear or
+> nonlinear, can beat it.
+
+> [NARRATOR, rate=-10%] Two theorems. One filter.
+
+> [SKEPTIC, style=unfriendly] Big if.
+
+> [NARRATOR] Enormous if.
+
+PAUSE: medium
+
+FADEOUT: theorem
+SHOW: axes with sharp-turn trajectory (true path as white dashed)
+SHOW: KF estimate path ($COLOR_PREDICTION) overshooting turns badly
+
+> [NARRATOR] Pedestrians turn corners. That's not linear.
+> And when the dynamics break the assumptions, the filter
+> doesn't degrade gracefully — it diverges.
+
+PAUSE: short
+
+= BEAT 8: The road ahead =
+
+FADEOUT: trajectory, axes
+SHOW: taxonomy diagram (left to right flow):
+  KF ($COLOR_FILTER_KF) -> EKF ($COLOR_FILTER_EKF) -> UKF ($COLOR_FILTER_UKF) -> PF ($COLOR_FILTER_PF)
+  below: TF ($COLOR_FILTER_TF) -> Multi-Agent ($COLOR_FILTER_IMM) -> World Models ($COLOR_SSM) -> Dynamics ($COLOR_PROCESS_NOISE)
+
+> [NARRATOR, style=hopeful] Each limitation has a solution.
+> The Extended Kalman linearizes on the fly. The Unscented
+> version avoids linearization entirely. Particle filters
+> drop the Gaussian assumption. And then there's deep
+> learning.
+
+TEXT: "Next: Extended Kalman Filter" (center, $COLOR_HIGHLIGHT)
+
+> [NARRATOR] The Kalman Filter assumes the world is linear.
+> Pedestrians don't.
+
+> [NARRATOR, rate=-10%] Next time — we break that
+> assumption.
+
+PAUSE: long
+
+FADEOUT: all
