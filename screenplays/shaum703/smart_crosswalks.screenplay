@@ -1,0 +1,373 @@
+PART 10: Smart Pedestrian Crosswalk Technologies
+SCENE 01-10: Full Chapter — "74% of pedestrian fatalities happen where no one is watching."
+
+REFERENCES:
+  - Cirillo, Pandit, & Momeni Rad (2025) — SHAUM703 Final Report, Maryland DOT
+  - Pellegrini et al. (2009) — ETH Zurich pedestrian dataset
+  - Bewley et al. (2016) — SORT: Simple Online Realtime Tracking
+  - Kalman (1960) — A new approach to linear filtering and prediction problems
+  - Zhang et al. (2022) — ByteTrack: Multi-Object Tracking by Associating Every Detection Box
+  - Zegeer et al. (2002) — FHWA pedestrian crossing study
+  - NCHRP Report 841 (2017) — Crash Modification Factors
+
+DATA:
+  cmf_data: PHB CMF=0.45, RRFB CMF=0.53, MPS CMF=0.55
+  yielding_rates: baseline=10-20%, RRFB=80-90%, PHB=95%+
+  sensor_specs: Bosch 1080p/4K 0.0047lux vs FLIR 640x480 thermal 0lux
+  site1: UMD campus, 9hr (2AM-11AM), Bosch+FLIR+Jetson Orin AGX
+  site2: Park road, 17hr (1PM-5AM)
+  tracking_results: ByteTrack HOTA 0.953-0.992, OC-SORT 0.808-0.965, StrongSORT 0.873-0.977
+
+= SCENE 01: The Invisible Crisis (2 min) =
+
+TITLE: "The Invisible Crisis" (top)
+TEXT: "74% at non-intersections" (center, $COLOR_HIGHLIGHT)
+
+> Seventy-four percent of pedestrian fatalities in the United States happen at non-intersection locations.
+> Not at traffic lights. Not at stop signs.
+> Midblock — between intersections — where speeds are higher, driver attention is lower,
+> and there's nothing telling anyone to stop.
+
+SHOW: animated counter cycling from 0% to 74% (large, center)
+SHOW: icon bar representing fatality locations
+
+> Ninety-three percent of midblock crashes happen where there's no signal at all.
+> Nearly half of all pedestrian fatalities happen at night.
+
+PAUSE: medium
+
+> This isn't a technology problem. It's an infrastructure gap.
+> And in Maryland, a team of researchers set out to close it.
+
+NOTE: "Cirillo, Pandit & Momeni Rad (2025)\nMDOT SHA Research Report"
+
+FADEOUT: all
+
+= SCENE 02: The Arms Race (2.5 min) =
+
+TITLE: "The Arms Race" (top)
+SHOW: treatment hierarchy diagram (left to right, escalating):
+  Marked Only -> Signs+Markings -> RRFB -> PHB -> MPS -> Full Signal
+
+> The transportation engineering community has been fighting this battle for decades.
+> At the bottom — just paint on the road. A marked crosswalk. No control.
+> Driver yielding? Ten to twenty percent. On a good day.
+
+SHOW: yielding rate bar chart (baseline vs RRFB vs PHB)
+ANIMATE: bars grow from 0 to values
+
+> Then Rectangular Rapid Flashing Beacons. Bright, solar-powered, pedestrian-activated.
+> Yielding jumps to eighty to ninety percent. Crash reduction: forty-seven percent.
+
+> Pedestrian Hybrid Beacons — the HAWK signal. Goes from dark to flashing to solid red.
+> Yielding: ninety-five percent plus. Crash reduction: fifty-five percent.
+
+SHOW: CMF comparison bar chart (lower = better)
+TEXT: "Crash Modification Factors" (below chart)
+
+> And Midblock Pedestrian Signals — full traffic signals dedicated to pedestrians.
+> Forty-five percent crash reduction. Thirty-four percent reduction in all injury crashes.
+
+PAUSE: medium
+
+> The question isn't whether these treatments work. They do.
+> The question is: can we measure HOW they work, in real time, at scale?
+
+FADEOUT: all
+
+= SCENE 03: Seeing in the Dark (2.5 min) =
+
+TITLE: "Seeing in the Dark" (top)
+
+> Half of pedestrian fatalities happen at night. So any detection system must work in darkness.
+> Two fundamentally different approaches.
+
+SHOW: split comparison — left: Bosch visible camera, right: FLIR thermal camera
+TEXT: "Visible + Starlight" (left), "Thermal Infrared" (right)
+
+> On the left — visible spectrum. The Bosch Inteox uses starlight technology.
+> Down to 0.0047 lux in color. That's about the light from a crescent moon.
+
+> On the right — thermal infrared. The FLIR TrafiSense AI.
+> Zero lux required. It doesn't see light — it sees heat.
+
+SHOW: Planck's Law equation
+TEXT: "Wien's Law: human body peaks at 9.3 micrometers" (below equation)
+
+> Every object above absolute zero emits thermal radiation.
+> Planck's Law governs the spectral distribution.
+> Wien's Law tells us the peak wavelength — for the human body at 37 degrees Celsius,
+> that's 9.3 micrometers. Squarely in the long-wave infrared band.
+
+SHOW: NETD equation
+TEXT: "NETD: Noise Equivalent Temperature Difference" (below)
+
+> The key metric for thermal cameras is NETD — Noise Equivalent Temperature Difference.
+> The FLIR sensor achieves less than or equal to 50 millikelvin.
+> That means it can distinguish a temperature difference of five hundredths of a degree.
+
+SHOW: sensor spec comparison table (side by side)
+
+> But thermal has a weakness. When ambient temperature matches body temperature —
+> Maryland summers — contrast drops. The Beer-Lambert law tells us atmospheric
+> absorption also eats into the signal.
+
+PAUSE: medium
+
+FADEOUT: all
+
+= SCENE 04: The Study (1.5 min) =
+
+TITLE: "The Study" (top)
+SHOW: Maryland map with two site markers
+
+> Two sites in Maryland. Twenty-six hours of multi-modal data.
+
+SHOW: site info panels (side by side)
+TEXT: "Site 1: UMD Campus" (left), "Site 2: Park Road" (right)
+
+> Site 1 — opposite a dining hall on the University of Maryland campus.
+> Nine hours of footage, two AM to eleven AM.
+> Overnight baseline through morning surge.
+
+> Site 2 — near a park on a busy road.
+> Seventeen hours, one PM to five AM the next day.
+> Full day-night cycle.
+
+SHOW: hardware stack diagram (Bosch + FLIR + Jetson Orin AGX)
+
+> Both sites instrumented with a Bosch starlight camera, a FLIR thermal sensor,
+> and an NVIDIA Jetson Orin AGX for edge processing.
+> Everything runs locally — no cloud dependency.
+
+PAUSE: short
+
+FADEOUT: all
+
+= SCENE 05: Detection Pipeline (2 min) =
+
+TITLE: "Detection Pipeline" (top)
+SHOW: detection pipeline diagram (Image -> Backbone CNN -> Feature Maps -> Predictions)
+
+> Before you can track a pedestrian, you have to find them.
+> Object detection: given an image, output bounding boxes with class labels.
+
+SHOW: IoU diagram (predicted box overlapping ground truth)
+TEXT: "IoU > 0.5 = True Positive" (below)
+
+> We measure accuracy with Intersection over Union.
+> The overlap between predicted and ground truth boxes, divided by their union.
+> Above 0.5 — we call it a detection. Below — a miss.
+
+SHOW: One-stage vs Two-stage comparison diagram
+TEXT: "YOLO: You Only Look Once" ($COLOR_HIGHLIGHT)
+
+> Two architectures. Two-stage detectors like Faster R-CNN propose regions first,
+> then classify. Accurate, but slow.
+> One-stage detectors like YOLO do both in one pass. Fast enough for real-time.
+
+> YOLO has evolved from version 1 through version 8.
+> YOLOv8 dropped anchor boxes entirely — anchor-free, direct regression.
+> On a Jetson Orin, with TensorRT optimization, it runs in real time.
+
+PAUSE: short
+
+FADEOUT: all
+
+= SCENE 06: Tracking IS Kalman Filtering (3 min) =
+
+TITLE: "Tracking IS Kalman Filtering" (top)
+TEXT: "The predict/update cycle — in production" ($COLOR_HIGHLIGHT)
+
+> Detection gives you bounding boxes in a single frame.
+> But a pedestrian is not a snapshot — they're a trajectory across time.
+> Multi-object tracking connects detections across frames into persistent identities.
+
+SHOW: SORT pipeline diagram (Detection -> Kalman Predict -> Hungarian Match -> Kalman Update)
+
+> And at the heart of every major tracker is something we've already seen.
+> SORT — Simple Online Realtime Tracking, Bewley 2016 —
+> uses a Kalman Filter for motion prediction.
+
+SHOW: KF state vector for tracking
+TEXT: "State: [x, y, w, h, vx, vy, vw, vh]" ($COLOR_PREDICTION)
+
+> The state vector is the bounding box — center x, center y, width, height —
+> plus their velocities. Eight dimensions.
+> Predict step: constant velocity model moves the box forward.
+> Update step: match detections to predictions using the Hungarian algorithm,
+> then correct with the Kalman gain.
+
+SHOW: predict-update cycle animation (bounding box moving and correcting)
+
+> This is exactly the predict-update cycle from Part 1 of this series.
+> Same F matrix. Same Kalman gain. Same optimal fusion of prediction and measurement.
+> Deployed in every multi-object tracker you've ever used.
+
+PAUSE: medium
+
+> But SORT has a limitation — it only uses motion.
+> When two pedestrians cross paths, their boxes overlap,
+> and identity switches happen.
+
+TEXT: "ByteTrack: use every detection" ($COLOR_FILTER_TF)
+
+> ByteTrack's innovation: use low-confidence detections too.
+> Most trackers throw away detections below a confidence threshold.
+> ByteTrack keeps them, matches them to lost tracks in a second association round.
+> Result: higher recall, fewer missed pedestrians.
+
+TEXT: "OC-SORT: observation-centric" ($COLOR_FILTER_UKF)
+
+> OC-SORT re-updates the Kalman state when a track recovers from occlusion.
+> It backtracks through the unobserved period and re-estimates.
+
+TEXT: "StrongSORT: add appearance" ($COLOR_FILTER_EKF)
+
+> StrongSORT adds a Re-ID appearance model —
+> a neural network that encodes what each person looks like.
+> Motion plus appearance makes identity more robust.
+
+PAUSE: medium
+
+NOTE: "Bewley et al. (2016). SORT.\nZhang et al. (2022). ByteTrack."
+
+FADEOUT: all
+
+= SCENE 07: Tracker Shootout (2 min) =
+
+TITLE: "Tracker Shootout" (top)
+SHOW: HOTA comparison table (4 rows x 4 columns: Tracker, Site1-Bosch, Site1-FLIR, Site2-Bosch, Site2-FLIR)
+
+> We ran three trackers — ByteTrack, OC-SORT, StrongSORT —
+> against BoT-SORT as pseudo-ground truth, across both cameras, both sites.
+
+> ByteTrack dominates. HOTA scores from 0.932 to 0.992.
+> Detection recall: 0.998 to 1.000. It finds almost everything BoT-SORT finds.
+
+SHOW: highlight ByteTrack row in table
+
+> But look at the false positives. Fourteen thousand nine hundred at Site 1, Bosch.
+> ByteTrack is aggressive — it would rather detect a shadow than miss a person.
+
+> OC-SORT is the opposite. Precision-focused. Very few false positives.
+> But it misses sixty thousand detections at Site 1.
+> That's conservative to the point of blindness.
+
+SHOW: highlight FN column for OC-SORT
+
+> StrongSORT splits the difference. Moderate false positives, moderate misses.
+> Its Re-ID features help with identity — only 753 ID switches versus ByteTrack's 162.
+> But in complex scenes, it can't match ByteTrack's raw coverage.
+
+PAUSE: medium
+
+> And notice — every tracker improves dramatically at Site 2.
+> ByteTrack false positives drop from fourteen thousand to one hundred fifty-nine.
+> Simpler scene, fewer occlusions, better performance.
+
+FADEOUT: all
+
+= SCENE 08: What the Cameras See (2 min) =
+
+TITLE: "What the Cameras See" (top)
+
+> How do the two cameras compare?
+
+SHOW: Bosch vs FLIR detection timeline (temporal plot, x=time of day, y=detections)
+
+> The Bosch starlight camera delivers consistent performance from dawn to dusk
+> and into darkness — its starlight technology keeps working at 0.0047 lux.
+
+> The FLIR thermal sensor excels at night — zero ambient light required.
+> But it struggles when thermal contrast drops.
+> Maryland summers, when pavement temperature approaches body temperature,
+> pedestrians become harder to distinguish from the background.
+
+SHOW: comparison bar chart (day vs night performance for each camera)
+
+> At Site 1, FLIR tracks fewer objects than Bosch overall —
+> sixteen thousand three hundred FLIR predictions versus Bosch's higher count for ByteTrack.
+> The resolution difference matters: 640x480 thermal versus 1080p visible.
+
+> But in complete darkness — below 0.001 lux —
+> the thermal sensor is the only one still seeing clearly.
+
+PAUSE: medium
+
+> The answer isn't one or the other. It's both.
+> Sensor fusion: visible when there's light, thermal when there isn't.
+
+FADEOUT: all
+
+= SCENE 09: Spatial Patterns (1.5 min) =
+
+TITLE: "Spatial Patterns" (top)
+
+SHOW: heatmap visualization (pedestrian density map for Site 1)
+TEXT: "Pedestrian Activity: Site 1" (below)
+
+> The tracking data reveals where pedestrians actually cross —
+> not where engineers think they should.
+> High-density zones on this heatmap mark the natural desire lines.
+
+SHOW: trajectory clusters (K-means clusters overlaid on crossing area)
+
+> Trajectory clustering separates distinct crossing behaviors.
+> Some pedestrians cross straight. Others angle toward a bus stop.
+> Others cut diagonally — the shortest path, regardless of markings.
+
+> The FLIR and Bosch cameras show the same clusters
+> but at different resolutions — visible captures finer spatial detail,
+> thermal captures in conditions visible can't.
+
+PAUSE: short
+
+> These spatial patterns directly inform where to place treatments.
+> Put the crosswalk where the heatmap says people are already crossing.
+
+FADEOUT: all
+
+= SCENE 10: The Bigger Picture (2 min) =
+
+TITLE: "The Bigger Picture" (top)
+
+SHOW: CMF decision framework diagram
+TEXT: "From Research to Policy" ($COLOR_HIGHLIGHT)
+
+> Forty-five to fifty-five percent crash reduction with active treatments.
+> Ten to ninety-five percent jump in driver yielding.
+> ByteTrack tracks pedestrians in real time with HOTA above 0.95.
+
+SHOW: treatment recommendation matrix (lanes x speed x volume -> treatment)
+
+> The engineering guidelines are clear.
+> Two lanes, low speed — marked crosswalk may suffice.
+> Multi-lane arterial, thirty-five miles per hour or more —
+> you need a beacon or signal. No exceptions.
+> Three hundred feet minimum from the nearest signalized intersection.
+> ADA compliance is non-negotiable.
+
+PAUSE: medium
+
+> This is how research becomes infrastructure.
+> Sensors and algorithms that work in the lab, validated in the field,
+> translated into guidelines that save lives.
+
+SHOW: Vision Zero logo / text
+TEXT: "Vision Zero: zero fatalities" (center)
+
+> Maryland's Vision Zero initiative aims for zero traffic fatalities.
+> That's not a slogan — it's an engineering target.
+> And smart crosswalk technologies are one tool in that toolbox.
+
+> The Kalman Filter predicts where you'll be.
+> The camera sees where you are.
+> The beacon tells the driver to stop.
+> Together — one fewer statistic.
+
+PAUSE: long
+
+NOTE: "Cirillo, Pandit & Momeni Rad (2025)\nEvaluation of Smart Pedestrian Crosswalk Technologies\nMDOT SHA Research Report"
+
+FADEOUT: all
